@@ -4,3 +4,9 @@
 3. Wpisujemy w wierszu poleceń komende docker-compose up
 4. Chwile czekamy
 5. Wpisujemy w przeglądarce localhost:8080
+
+### Team
+- Marta Kociszewska
+- Lidia Zawrzykraj
+- Weronika Kankowska
+- Piotr Kierznowski
