@@ -29,6 +29,17 @@ services:
       - prestashop_network
     volumes:
       - ./prestashop:/var/www/html
+
+  phpmyadmin:
+    image: phpmyadmin
+    restart: always
+    ports:
+      - 8081:80
+    environment:
+      - PMA_ARBITRARY=1
+    networks:
+      - prestashop_network
+      
 networks:
   prestashop_network:
 volumes:
