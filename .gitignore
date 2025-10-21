@@ -217,3 +217,11 @@ nb-configuration.xml
 .project
 .settings/
 .externalToolBuilders/
+
+
+### dbdata folder database files ###
+prestashop/dbdata/binlog.*
+
+
+### prestashop cashe ###
+/prestashop/var/cache/*
