@@ -225,3 +225,7 @@ prestashop/dbdata/binlog.*
 
 ### prestashop cashe ###
 /prestashop/var/cache/*
+
+### database ###
+prestashop/dbdata/*
+!prestashop/dbdata/sqlDump.sql
