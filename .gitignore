@@ -228,4 +228,3 @@ prestashop/dbdata/binlog.*
 
 ### database ###
 prestashop/dbdata/*
-!prestashop/dbdata/sqlDump.sql
