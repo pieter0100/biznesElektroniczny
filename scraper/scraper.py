@@ -27,13 +27,13 @@ class WebScraper:
             print(f"Error while downloading {url}: {e}")
             return None
 
-    def scrape_categories(self):
+    def scrape_categories(self, soup=None, parent_name=""):
         print("Scraping categories")
         html = self.get_page(self.base_url)
         if not html:
             return
+        
         soup = BeautifulSoup(html, 'html.parser')
-
         categories = []
 
         menu_container = soup.select_one("div.innerbox ul.standard")
@@ -41,42 +41,54 @@ class WebScraper:
             print("Category container not found.")
             return []
 
-        for li in menu_container.select("li[id^='category_'] a"):
-            href = li.get("href")
-            name = li.get_text(strip=True)
-            if href and href.startswith("/pl/"):
-                full_url = urljoin(self.base_url, href)
-                categories.append((name, full_url))
-                print(f"Category: {name} - {full_url}")
+        for li in menu_container.select("li[id^='category_']"):
+            a_tag = li.find("a")
+            if not a_tag:
+                continue
+            href = a_tag.get("href")
+            name = a_tag.get_text(strip=True)
+            full_name = f"{parent_name} > {name}" if parent_name else name
+            full_url = urljoin(self.base_url, href)
+            categories.append((full_name, full_url))
+            sub_ul = li.find("ul")
+            if sub_ul:
+                sub_categories = self.scrape_categories(BeautifulSoup(str(sub_ul), 'html.parser'), full_name)
+                categories.extend(sub_categories)
         return categories
 
-    def scrape_products_from_category(self, category_url, category_name):
-        print("Scraping products from category:", category_name)
+    def scrape_products_from_category(self, category_url, parent_category = None):
+        print("Scraping products from category:", parent_category)
         html = self.get_page(category_url)
         if not html:
             return
         soup = BeautifulSoup(html, 'html.parser')
         
-        product_selectors = [
-            "a.product-name",
-            ".product-item a",
-            ".product a",
-            ".product-link"
-        ]
-
-        product_count = 0
         product_links = set()
-
-        for selector in product_selectors:
-            for a in soup.select(selector):
-                href = a.get("href")
-                if href and "/pl/p/" in href:
-                    full_url = urljoin(self.base_url, href)
-                    product_links.add(full_url)
+        for a in soup.select("a.product-name, .product-item a, .product a, .product-link"):
+            href = a.get("href")
+            if href and "/pl/p/" in href:
+                product_links.add(urljoin(self.base_url, href))
 
         for product_url in product_links:
-            self.scrape_product(product_url, category_name)
-            time.sleep(1)
+            self.scrape_product(product_url, parent_category)
+            time.sleep(0.5)
+
+        pagination = soup.select("div.floatcenterwrap ul.paginator li a")
+        next_page_url = None
+        for a in pagination:
+            if a.get_text(strip=True) == "»":  # next page arrow
+                next_page_url = urljoin(self.base_url, a["href"])
+                break
+        if next_page_url:
+            self.scrape_products_from_category(next_page_url, parent_category)
+        
+        #subcategories
+        for sub_li in soup.select("li[id^='category_'] ul.level_1 li a"):
+            sub_href = sub_li.get("href")
+            sub_name = sub_li.get_text(strip=True)
+            if sub_href and sub_href.startswith("/pl/"):
+                sub_url = urljoin(self.base_url, sub_href)
+                self.scrape_products_from_category(sub_url, parent_category=sub_name)
 
     def scrape_product(self, product_url, category_name):
         print("Scraping product:", product_url)
@@ -164,7 +176,7 @@ class WebScraper:
         categories = self.scrape_categories()
         for category_name, category_url in categories:
             print("Category:", category_name)
-            self.scrape_products_from_category(category_url, category_name)
+            self.scrape_products_from_category(category_url, parent_category = category_name)
         self.save_to_csv()
         end_time = time.time()
         print(f"\nScraping took {end_time - start_time:.2f} seconds")
