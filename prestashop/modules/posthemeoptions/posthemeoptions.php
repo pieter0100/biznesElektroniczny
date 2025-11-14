@@ -719,6 +719,17 @@ class PosThemeoptions extends Module implements WidgetInterface
             $manager->addCategory('posthemes_footer',   ['title' => 'Posthemes footer']);
         });
         CE\add_action('elementor/editor/before_enqueue_scripts', array($this, 'posEnqueueScripts'));
+        
+        // Add custom fonts to Creative Elements
+        CE\add_filter('elementor/fonts/groups', function($font_groups) {
+            $font_groups['custom_fonts'] = 'Custom Fonts';
+            return $font_groups;
+        });
+        
+        CE\add_filter('elementor/fonts/additional_fonts', function($additional_fonts) {
+            $additional_fonts['DM Sans'] = 'custom_fonts';
+            return $additional_fonts;
+        });
     }
 
 	protected function getWarningMultishopHtml()
