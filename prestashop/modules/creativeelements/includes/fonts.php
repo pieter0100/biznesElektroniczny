@@ -269,6 +269,7 @@ class Fonts
             'Didact Gothic' => self::GOOGLE,
             'Diplomata' => self::GOOGLE,
             'Diplomata SC' => self::GOOGLE,
+            'DM Sans' => self::GOOGLE,
             'Do Hyeon' => self::GOOGLE,
             'Dokdo' => self::GOOGLE,
             'Domine' => self::GOOGLE,
