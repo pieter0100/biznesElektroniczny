@@ -10,6 +10,15 @@ services:
       - prestashop_network
     volumes:
       - ./prestashop/dbdata:/var/lib/mysql
+  maildev: # mailservice falszywy smtp zeby moc odebirac mail typu rejstracaj albo zakup
+    image: maildev/maildev
+    container_name: maildev
+    ports:
+      - "1080:1080"  # Interfejs webowy MailDev
+      - "1025:1025"  # Port SMTP (dla PrestaShop)
+    networks:
+      - prestashop_network
+    restart: unless-stopped
   prestashop:
     container_name: prestashop
     image: prestashop/prestashop:1.7.8.11
