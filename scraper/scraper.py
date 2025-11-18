@@ -1,28 +1,38 @@
-from bs4 import BeautifulSoup
-import requests
 import os
 import csv
-from urllib.parse import urljoin
 import time
+from urllib.parse import urljoin
 from concurrent.futures import ThreadPoolExecutor
 
+import requests
+from bs4 import BeautifulSoup
+
 class WebScraper:
+    BASE_URL = "https://winohobby.biz/"
+    USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    OUTPUT_FOLDER = "winohobby_data"
+    IMAGE_FOLDER = os.path.join(OUTPUT_FOLDER, "images")
+    START_CATEGORY_ID = 10  # Start from 10 to avoid conflicts with default categories
+    MAX_IMAGES_PER_PRODUCT = 2
+    THREAD_POOL_SIZE = 10
+    TIMEOUT = 10  # seconds
+
     def __init__(self):
-        self.base_url = "https://winohobby.biz/"
+        self.base_url = self.BASE_URL
         self.session = requests.Session()
         self.session.headers.update({
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+            "User-Agent": self.USER_AGENT
             })
-        self.output_folder = "winohobby_data"
+        self.output_folder = self.OUTPUT_FOLDER
         os.makedirs(self.output_folder, exist_ok=True)
-        os.makedirs(os.path.join(self.output_folder, "images"), exist_ok=True)
+        os.makedirs(self.IMAGE_FOLDER, exist_ok=True)
         self.products_dictionary = {}
         self.category_name_to_id = {}
 
 
     def get_page(self, url):
         try:
-            response = self.session.get(url, timeout=10)
+            response = self.session.get(url, timeout=self.TIMEOUT)
             response.raise_for_status()
             response.encoding = 'utf-8'
             return response.text
@@ -32,7 +42,6 @@ class WebScraper:
 
     def page_has_products_or_subcats(self, url):
         """Return True if the category page contains product links or subcategory links.
-
         This helps skip empty categories that have no products or further subcategories.
         """
         html = self.get_page(url)
@@ -46,288 +55,114 @@ class WebScraper:
         if soup.select("a[href*='/c/']"):
             return True
         return False
-
-    # def scrape_categories(self, url=None, parent_name="", visited_urls=None):
-    #     if visited_urls is None:
-    #         visited_urls = set()
-            
-    #     if url is None:
-    #         url = self.base_url
-            
-    #     if url in visited_urls:
-    #         return []
-    #     visited_urls.add(url)
-            
-    #     html = self.get_page(url)
-    #     if not html:
-    #         return []
-        
-    #     soup = BeautifulSoup(html, 'html.parser')
-    #     categories = []
-        
-    #     # Looking for main categories on the homepage
-    #     if parent_name == "":
-    #         menu_container = soup.select_one("div.innerbox ul.standard")
-    #         if not menu_container:
-    #             print("Category container not found.")
-    #             return []
-            
-    #         for li in menu_container.find_all("li", recursive=False):
-    #             a = li.find("a", recursive=False)
-    #             if not a:
-    #                 continue
-                
-    #             name = a.get_text(strip=True)
-    #             name = name.replace('<', '-').replace('>', '-')
-    #             href = a.get("href")
-    #             full_url = urljoin(self.base_url, href)
-                
-    #             if self.page_has_products_or_subcats(full_url):
-    #                 categories.append((name, full_url))
-    #                 print(f"Found category: {name}")
-    #             else:
-    #                 print(f"Skipped empty category: {name} - {full_url}")
-                
-    #             # Check for subcategories
-    #             if len(parent_name.split(' > ')) < 2:
-    #                 subcategories = self.scrape_categories(full_url, name, visited_urls)
-    #                 categories.extend(subcategories)
-        
-    #     # On category pages, look for subcategories
-    #     else:
-    #         depth = len(parent_name.split(' > '))
-    #         if depth >= 3:
-    #             return categories
-            
-    #         leftcol = soup.select_one("div.leftcol")
-
-    #         if leftcol:
-    #             current_category_item = None
-                
-    #             category_items = leftcol.select("li")
-    #             for li_item in category_items:
-    #                 # Check if this is the current category element
-    #                 main_link = li_item.find("a", recursive=False)
-    #                 if main_link:
-    #                     main_href = main_link.get("href", "")
-    #                     # Check if the link leads to the current category
-    #                     if main_href and (url.endswith(main_href) or main_href in url):
-    #                         current_category_item = li_item
-    #                         break
-                
-    #             if current_category_item:
-    #                 subcategory_list = current_category_item.find("ul", recursive=False)
-    #                 if subcategory_list:
-    #                     subcategory_links = subcategory_list.find_all("a", recursive=True)
-                        
-    #                     for link in subcategory_links:
-    #                         href = link.get("href")
-    #                         name = link.get_text(strip=True)
-    #                         name = name.replace('<', '-').replace('>', '-')
-                            
-    #                         if not href or not name:
-    #                             continue
-                            
-    #                         # Check if this is a category link
-    #                         if not '/c/' in href:
-    #                             continue
-                                
-    #                         full_url = urljoin(self.base_url, href)
-                            
-    #                         if full_url in visited_urls:
-    #                             continue
-                            
-    #                         main_categories = [
-    #                             '/c/Promocje-i-Wyprzedaze/', '/c/DROZDZE-TURBO-HURT/', '/c/FACHOWA-LITERATURA/',
-    #                             '/c/Wodki%2C-nalewki%2C-destylacja/', '/c/Akcesoria-PIWOWARSKIE/', '/c/Akcesoria-SEROWARSKIE/', 
-    #                             '/c/Akcesoria-WINIARSKIE/', '/c/Akcesoria-Wedliniarskie-Kuchenne/', '/c/Akcesoria-laboratoryjne%2C-dodatki%2C-gadzety/',
-    #                             '/c/Butelki%2C-sloje%2C-kapturki%2C-dodatki/', '/c/Platki-debowe/', '/c/WYPRZEDAZE/'
-    #                         ]
-                            
-    #                         is_main_category = any(main_cat.rstrip('/') in href for main_cat in main_categories)
-                            
-    #                         if not is_main_category:
-    #                             full_name = f"{parent_name} > {name}"
-    #                             if self.page_has_products_or_subcats(full_url):
-    #                                 categories.append((full_name, full_url))
-    #                                 print(f"Found subcategory: {full_name}")
-    #                             else:
-    #                                 print(f"Skipped empty subcategory: {full_name} - {full_url}")
-                                
-    #                             # Check for further subcategories
-    #                             if depth < 2:
-    #                                 sub_subcategories = self.scrape_categories(full_url, full_name, visited_urls)
-    #                                 categories.extend(sub_subcategories)
-            
-    #         # Check centercol for other subcategories
-    #         centercol = soup.select_one("div.centercol")
-    #         if centercol:
-    #             error_box = centercol.select("#box_404")
-    #             if error_box:
-    #                 print(f"Category page shows 404 error: {url}")
-    #                 return categories
-                
-    #             # Search for category links in the main content
-    #             category_links = centercol.select("a[href*='/c/']")
-                
-    #             current_url_parts = url.rstrip('/').split('/')
-    #             current_base = '/'.join(current_url_parts)
-                
-    #             for link in category_links:
-    #                 href = link.get("href")
-    #                 name = link.get_text(strip=True)
-    #                 name = name.replace('<', '-').replace('>', '-')
-                    
-    #                 if not href or not name:
-    #                     continue
-                    
-    #                 # Skip special and non-category links
-    #                 if (name in ['»', '«', '...', '', 'zobacz więcej'] or 
-    #                     name.isdigit() or 
-    #                     '/full' in href):
-    #                     continue
-                    
-    #                 # Skip links to the same category or its pages
-    #                 if (href == url or 
-    #                     current_base in href):
-    #                     continue
-                    
-    #                 full_url = urljoin(self.base_url, href)
-                    
-    #                 if full_url in visited_urls:
-    #                     continue
-                    
-    #                 # Check if this is not a main category from our list
-    #                 main_categories = [
-    #                     '/c/Promocje-i-Wyprzedaze/', '/c/DROZDZE-TURBO-HURT/', '/c/FACHOWA-LITERATURA/',
-    #                     '/c/Wodki%2C-nalewki%2C-destylacja/', '/c/Akcesoria-PIWOWARSKIE/', '/c/Akcesoria-SEROWARSKIE/', 
-    #                     '/c/Akcesoria-WINIARSKIE/', '/c/Akcesoria-Wedliniarskie-Kuchenne/', '/c/Akcesoria-laboratoryjne%2C-dodatki%2C-gadzety/',
-    #                     '/c/Butelki%2C-sloje%2C-kapturki%2C-dodatki/', '/c/Platki-debowe/', '/c/WYPRZEDAZE/'
-    #                 ]
-                    
-    #                 is_main_category = any(main_cat.rstrip('/') in href for main_cat in main_categories)
-                    
-    #                 # Dodaj tylko te które nie są głównymi kategoriami
-    #                 if not is_main_category:
-    #                     # Sprawdź czy już nie mamy tej kategorii (żeby uniknąć duplikatów)
-    #                     full_name = f"{parent_name} > {name}"
-    #                     if not any(cat_name == full_name for cat_name, _ in categories):
-    #                         if self.page_has_products_or_subcats(full_url):
-    #                             categories.append((full_name, full_url))
-    #                             print(f"Found subcategory: {full_name}")
-    #                         else:
-    #                             print(f"Skipped empty subcategory: {full_name} - {full_url}")
-                            
-    #                         # Sprawdź dalsze podkategorie tylko jeśli nie za głęboko
-    #                         if depth < 2:
-    #                             sub_subcategories = self.scrape_categories(full_url, full_name, visited_urls)
-    #                             categories.extend(sub_subcategories)
-        
-    #     return categories
+    
+    def clean_name(self, name):
+        return name.replace('<', '-').replace('>', '-').replace('=', '-').replace('.', '')
 
     def scrape_categories(self, url=None, parent_name="", visited_urls=None):
         if visited_urls is None:
             visited_urls = set()
-            
         if url is None:
             url = self.base_url
-            
         if url in visited_urls:
             return []
         visited_urls.add(url)
-            
+
         html = self.get_page(url)
         if not html:
             return []
-        
+
         soup = BeautifulSoup(html, 'html.parser')
         categories = []
-        
-        # Looking for main categories on the homepage
-        if parent_name == "":
-            menu_container = soup.select_one("div.innerbox ul.standard")
-            if not menu_container:
-                print("Category container not found.")
-                return []
-            
-            for li in menu_container.find_all("li", recursive=False):
-                a = li.find("a", recursive=False)
-                if not a:
-                    continue
-                
-                name = a.get_text(strip=True)
-                name = name.replace('<', '-').replace('>', '-')
-                href = a.get("href")
-                full_url = urljoin(self.base_url, href)
-                
-                # Add the category even if it is empty
-                categories.append((name, full_url))
-                if self.page_has_products_or_subcats(full_url):
-                    print(f"Found category: {name}")
-                else:
-                    print(f"Added empty category: {name} - {full_url}")
-                
-                # Check for subcategories
-                if len(parent_name.split(' > ')) < 2:
-                    subcategories = self.scrape_categories(full_url, name, visited_urls)
-                    categories.extend(subcategories)
-        
-        # On category pages, look for subcategories
-        else:
-            depth = len(parent_name.split(' > '))
-            if depth >= 3:
-                return categories
-            
-            leftcol = soup.select_one("div.leftcol")
 
-            if leftcol:
-                current_category_item = None
-                
-                category_items = leftcol.select("li")
-                for li_item in category_items:
-                    # Check if this is the current category element
-                    main_link = li_item.find("a", recursive=False)
-                    if main_link:
-                        main_href = main_link.get("href", "")
-                        # Check if the link leads to the current category
-                        if main_href and (url.endswith(main_href) or main_href in url):
-                            current_category_item = li_item
-                            break
-                
-                if current_category_item:
-                    subcategory_list = current_category_item.find("ul", recursive=False)
-                    if subcategory_list:
-                        subcategory_links = subcategory_list.find_all("a", recursive=True)
-                        
-                        for link in subcategory_links:
-                            href = link.get("href")
-                            name = link.get_text(strip=True)
-                            name = name.replace('<', '-').replace('>', '-')
-                            
-                            if not href or not name:
-                                continue
-                            
-                            # Check if this is a category link
-                            if not '/c/' in href:
-                                continue
-                                
-                            full_url = urljoin(self.base_url, href)
-                            
-                            if full_url in visited_urls:
-                                continue
-                            
-                            full_name = f"{parent_name} > {name}"
-                            categories.append((full_name, full_url))
-                            if self.page_has_products_or_subcats(full_url):
-                                print(f"Found subcategory: {full_name}")
-                            else:
-                                print(f"Added empty subcategory: {full_name} - {full_url}")
-                            
-                            # Check for further subcategories
-                            if depth < 2:
-                                sub_subcategories = self.scrape_categories(full_url, full_name, visited_urls)
-                                categories.extend(sub_subcategories)
-        
+        if parent_name == "":
+            categories.extend(self.scrape_main_categories(soup, visited_urls))
+        else:
+            categories.extend(self.scrape_subcategories(soup, url, parent_name, visited_urls))
+
+        return categories
+
+    def scrape_main_categories(self, soup, visited_urls):
+        """Scrape main categories from the homepage."""
+        categories = []
+        menu_container = soup.select_one("div.innerbox ul.standard")
+        if not menu_container:
+            print("Category container not found.")
+            return []
+
+        for li in menu_container.find_all("li", recursive=False):
+            a = li.find("a", recursive=False)
+            if not a:
+                continue
+
+            name = self.clean_name(a.get_text(strip=True))
+            href = a.get("href")
+            full_url = urljoin(self.base_url, href)
+
+            categories.append((name, full_url))
+            if self.page_has_products_or_subcats(full_url):
+                print(f"Found category: {name}")
+            else:
+                print(f"Added empty category: {name} - {full_url}")
+
+            # Recursively scrape subcategories
+            subcategories = self.scrape_categories(full_url, name, visited_urls)
+            categories.extend(subcategories)
+
+        return categories
+    
+    def scrape_subcategories(self, soup, url, parent_name, visited_urls):
+        """Scrape subcategories from a category page."""
+        categories = []
+        depth = len(parent_name.split(' > '))
+        if depth >= 3:
+            return categories
+
+        leftcol = soup.select_one("div.leftcol")
+        if not leftcol:
+            return categories
+
+        current_category_item = self.find_current_category_item(leftcol, url)
+        if current_category_item:
+            subcategory_list = current_category_item.find("ul", recursive=False)
+            if subcategory_list:
+                categories.extend(self.extract_subcategories(subcategory_list, parent_name, visited_urls))
+
+        return categories
+
+    def find_current_category_item(self, leftcol, url):
+        """Find the current category item in the left column."""
+        for li_item in leftcol.select("li"):
+            main_link = li_item.find("a", recursive=False)
+            if main_link:
+                main_href = main_link.get("href", "")
+                if main_href and (url.endswith(main_href) or main_href in url):
+                    return li_item
+        return None
+    
+    def extract_subcategories(self, subcategory_list, parent_name, visited_urls):
+        """Extract subcategories from a subcategory list."""
+        categories = []
+        for link in subcategory_list.find_all("a", recursive=True):
+            href = link.get("href")
+            name = self.clean_name(link.get_text(strip=True))
+            if not href or not name or '/c/' not in href:
+                continue
+
+            full_url = urljoin(self.base_url, href)
+            if full_url in visited_urls:
+                continue
+
+            full_name = f"{parent_name} > {name}"
+            categories.append((full_name, full_url))
+            if self.page_has_products_or_subcats(full_url):
+                print(f"Found subcategory: {full_name}")
+            else:
+                print(f"Added empty subcategory: {full_name} - {full_url}")
+
+            # Recursively scrape further subcategories
+            categories.extend(self.scrape_categories(full_url, full_name, visited_urls))
+
         return categories
 
     def scrape_products_from_category(self, category_url, category_name):
@@ -335,20 +170,31 @@ class WebScraper:
         html = self.get_page(category_url)
         if not html:
             return
+
         soup = BeautifulSoup(html, 'html.parser')
-        
+        product_links = self.get_product_links(soup)
+
+        self.scrape_products_concurrently(product_links, category_name)
+        self.handle_pagination(soup, category_url, category_name)
+
+    def get_product_links(self, soup):
+        """Extract product links from a category page."""
         product_links = set()
         for a in soup.select("a.product-name, .product-item a, .product a, .product-link"):
             href = a.get("href")
             if href and "/pl/p/" in href:
                 product_links.add(urljoin(self.base_url, href))
+        return product_links
 
-        with ThreadPoolExecutor(max_workers=10) as executor:
+    def scrape_products_concurrently(self, product_links, category_name):
+        """Scrape product details concurrently using a thread pool."""
+        with ThreadPoolExecutor(max_workers=self.THREAD_POOL_SIZE) as executor:
             futures = [executor.submit(self.scrape_product, url, category_name) for url in product_links]
             for future in futures:
                 future.result()
 
-        # pagination
+    def handle_pagination(self, soup, category_url, category_name):
+        """Handle pagination for a category page."""
         pagination = soup.select("div.floatcenterwrap ul.paginator li a")
         next_page_url = None
         for a in pagination:
@@ -358,8 +204,19 @@ class WebScraper:
         if next_page_url:
             self.scrape_products_from_category(next_page_url, category_name)
 
-    def scrape_product(self, product_url, category_name):
+    def name_to_friendly_url(self, name):
+        replacement = {
+        '?': '', '°': '', '½': 'pol', '&': '-', '„': '', '”': '', '\"': '-','<': '-',
+        '*': '', '%': '', '’': '-', '–': '-', ',': '-', '.': '-', '\'': '-', '>': '-',
+        ':': '-', "'": '-', '"': '-', '+':'-', ' ':'-', '/':'-', '(':'', ')':'', '=':'-',
+        'ł':'l','ą':'a','ę':'e','ś':'s','ć':'c','ń':'n','ó':'o','ź':'z','ż':'z',
+        'Ł':'L','Ą':'A','Ę':'E','Ś':'S','Ć':'C','Ń':'N','Ó':'O','Ź':'Z','Ż':'Z'
+        }
+        for key, value in replacement.items():
+            name = name.replace(key, value)
+        return "-".join(filter(None, name.lower().split("-")))
 
+    def scrape_product(self, product_url, category_name):
         if product_url in self.products_dictionary:
             self.products_dictionary[product_url]["categories"].add(category_name)
             return
@@ -368,41 +225,28 @@ class WebScraper:
         html = self.get_page(product_url)
         if not html:
             return
+
         soup = BeautifulSoup(html, 'html.parser')
-        
-        name = soup.select_one("h1[itemprop='name']")
-        name = name.text.strip() if name else "N/A"
-        name = name.replace('<', '-').replace('>', '-').replace('=', '-')
+        product_data = self.extract_product_details(soup, category_name)
+        self.products_dictionary[product_url] = product_data
+        time.sleep(0.5)
 
-        friendly_url = name.lower().replace('?','').replace('°','').replace('½','pol').replace('&', '-').replace('„', '').replace('”','').replace('*','').replace('%', '').replace('’', '-').replace('–','-').replace(',', '-').replace('.','-').replace(':', '-').replace('\'', '-').replace('\"','-').replace('+', '-').replace(' ', '-').replace('/', '-').replace(',', '').replace('(', '').replace(')', '').replace('ł', 'l').replace('ą', 'a').replace('ę', 'e').replace('ś', 's').replace('ć', 'c').replace('ń', 'n').replace('ó', 'o').replace('ź', 'z').replace('ż', 'z').replace('<', '-').replace('>', '-')
-        friendly_url = '-'.join(filter(None, friendly_url.split('-'))) # Removes extra dashes
+    def extract_product_details(self, soup, category_name):
+        """Extract product details from the product page."""
+        name = self.get_product_name(soup)
+        name = self.clean_name(name)
+        friendly_url = self.name_to_friendly_url(name)
+        price = self.get_product_price(soup)
+        description = self.get_product_description(soup)
+        images = self.get_product_images(soup)
 
-        price_tag = soup.select_one("em.main-price, span.main-price, span.price")
-        if price_tag:
-            price = price_tag.get_text(strip=True)
-        else:
-            price = "N/A"
-
-        desc = soup.select_one("div[itemprop='description'].resetcss.fr-view")
-        if desc:
-            description = " ".join(p.get_text(strip=True) for p in desc.find_all(['p', 'li', 'h2', 'h3']) if p.get_text(strip=True))
-        else:
-            description = "N/A"
-        
-        images = []
-        for img_tag in soup.select("a[href^='/userdata/public/gfx/'], img[src^='/userdata/public/gfx/']"):
-            img_url = img_tag.get("href") or img_tag.get("src")
-            if img_url and len(images) < 2:
-                img_full = urljoin(self.base_url, img_url)
-                images.append(img_full)
-        
         downloaded_images = []
         for img_url in images:
             filename = os.path.join(self.output_folder, "images", os.path.basename(img_url))
             self.download_image(img_url, filename)
             downloaded_images.append(filename)
 
-        product_data = {
+        return {
             "name": name,
             "price": price,
             "description": description,
@@ -410,9 +254,32 @@ class WebScraper:
             "categories": set([category_name]),
             "url": friendly_url
         }
-        
-        self.products_dictionary[product_url] = product_data
-        time.sleep(0.5)
+
+    def get_product_name(self, soup):
+        """Extract the product name."""
+        name = soup.select_one("h1[itemprop='name']")
+        return name.text.strip() if name else "N/A"
+
+    def get_product_price(self, soup):
+        """Extract the product price."""
+        price_tag = soup.select_one("em.main-price, span.main-price, span.price")
+        return price_tag.get_text(strip=True) if price_tag else "N/A"
+
+    def get_product_description(self, soup):
+        """Extract the product description."""
+        desc = soup.select_one("div[itemprop='description'].resetcss.fr-view")
+        if desc:
+            return " ".join(p.get_text(strip=True) for p in desc.find_all(['p', 'li', 'h2', 'h3']) if p.get_text(strip=True))
+        return "N/A"
+
+    def get_product_images(self, soup):
+        """Extract product image URLs."""
+        images = []
+        for img_tag in soup.select("a[href^='/userdata/public/gfx/'], img[src^='/userdata/public/gfx/']"):
+            img_url = img_tag.get("href") or img_tag.get("src")
+            if img_url and len(images) < self.MAX_IMAGES_PER_PRODUCT:
+                images.append(urljoin(self.base_url, img_url))
+        return images
 
     def download_image(self, img_url, filename):
         try:
@@ -426,19 +293,19 @@ class WebScraper:
     
     def save_to_csv(self):
         """
-        Zapisuje kategorie do pliku CSV w formacie kompatybilnym z PrestaShop.
+        Saves products to a CSV file in a format compatible with PrestaShop.
         
-        Pola PrestaShop:
-        - Aktywny: 1 (aktywna)
-        - Nazwa: nazwa kategorii
+        PrestaShop fields:
+        - Aktywny: 1 (active)
+        - Nazwa: product name
         - Kategoria
         - Cena
         - Opis
         - Dostępne do zamówienia: 1
         - W sprzedaży: 1
         - Ilość: 100
-        - Meta-tytuł: tytuł SEO
-        - Przepisany URL: przyjazny URL
+        - Meta-tytuł: SEO title
+        - Przepisany URL: friendly URL
         - URL zdjęć
         """
         csv_path = os.path.join(self.output_folder, "products.csv")
@@ -500,9 +367,9 @@ class WebScraper:
 
     def save_categories_csv(self, categories):
         """
-        Zapisuje kategorie do pliku CSV w formacie kompatybilnym z PrestaShop.
+        Saves categories to a CSV file in a format compatible with PrestaShop.
         
-        Pola PrestaShop:
+        PrestaShop fields:
         - ID: pozostaw puste, PrestaShop automatycznie przypisze
         - Aktywny: 1 (aktywna)
         - Nazwa: nazwa kategorii
@@ -564,7 +431,7 @@ class WebScraper:
                 "Przepisany URL"
             ])
             
-            category_id = 10 # Start from 10 to avoid conflicts with default categories
+            category_id = self.START_CATEGORY_ID
             for cat_name in unique_categories:
                 if cat_name not in category_map:
                     continue
@@ -582,8 +449,8 @@ class WebScraper:
                 
                 is_main_category = 1 if len(parts) == 1 else 0
                 
-                friendly_url = category_name.lower().replace('\'', '-').replace('\"','-').replace('+', '-').replace('&', 'and').replace(' ', '-').replace('/', '-').replace(',', '').replace('(', '').replace(')', '').replace('ł', 'l').replace('ą', 'a').replace('ę', 'e').replace('ś', 's').replace('ć', 'c').replace('ń', 'n').replace('ó', 'o').replace('ź', 'z').replace('ż', 'z')
-                
+                friendly_url = self.name_to_friendly_url(category_name)
+
                 meta_title = f"{category_name} - WinoHobby"
                 
                 meta_description = f"Akcesoria i produkty z kategorii {category_name}. Wysokiej jakości artykuły w najlepszych cenach."
@@ -605,8 +472,8 @@ class WebScraper:
         print("Started Scraping")
         categories = self.scrape_categories()
 
-        # Normalize and deduplicate categories to avoid processing the same
-        # category multiple times (differences can be only trailing slash/case).
+        # Deduplicate categories to avoid processing the same
+        # category multiple times.
         seen = set()
         deduped_categories = []
         for name, url in categories:
@@ -633,5 +500,6 @@ class WebScraper:
 def main():
     scraper = WebScraper()
     scraper.scrape()
+
 if __name__ == "__main__":
     main()
