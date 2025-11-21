@@ -17,6 +17,7 @@ class WebScraper:
     MAX_IMAGES_PER_PRODUCT = 2
     THREAD_POOL_SIZE = 10
     TIMEOUT = 10  # seconds
+    TAX = 1.23  # 23% VAT
 
     def __init__(self):
         self.base_url = self.BASE_URL
@@ -337,8 +338,8 @@ class WebScraper:
                 with open(filename, 'wb') as f:
                     for chunk in response.iter_content(1024):
                         f.write(chunk)
-        except:
-            print("Failed to download image:", img_url)
+        except Exception as e:
+            print(f"Failed to download image: {img_url}. Error: {e}")
     
     def get_parent_category_id(self, parts):
         if len(parts) == 1:
@@ -434,7 +435,7 @@ class WebScraper:
                 name = product["name"]
                 manufacturer = product.get("manufacturer", "")
                 price_brutto = product.get("price") or "0"
-                price_netto = str(round(float(price_brutto) / 1.23, 2)) if price_brutto != "0" else "0" #
+                price_netto = str(round(float(price_brutto) / self.TAX, 2)) if price_brutto != "0" else "0" #
                 description = product["description"]
 
                 category_ids = self.get_deepest_category_ids(product.get("categories", []))

@@ -16,7 +16,7 @@ Wartości pól:
 
 Kliknij: ```Następny krok >```
 
-- Zapisz swoje dane konfiguracji dopaswania: *Można nie trzeba*
+- Zapisz swoje dane konfiguracji dopasowania: *Można nie trzeba*
 - Wiersze do pominięcia: **1**
 
 Wybierz nazwy kolumn odpowiadające tym w pliku (pamiętaj aby przeklikać strzałkami wyświetlonymi pod tabelką i przypisać nazwy wszystkim kolumnom)
