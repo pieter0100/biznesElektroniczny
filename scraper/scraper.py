@@ -1,6 +1,7 @@
 import os
 import csv
 import time
+import random
 from urllib.parse import urljoin
 from concurrent.futures import ThreadPoolExecutor
 
@@ -12,7 +13,7 @@ class WebScraper:
     USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
     OUTPUT_FOLDER = "winohobby_data"
     IMAGE_FOLDER = os.path.join(OUTPUT_FOLDER, "images")
-    START_CATEGORY_ID = 10  # Start from 10 to avoid conflicts with default categories
+    START_CATEGORY_ID = 3
     MAX_IMAGES_PER_PRODUCT = 2
     THREAD_POOL_SIZE = 10
     TIMEOUT = 10  # seconds
@@ -57,7 +58,7 @@ class WebScraper:
         return False
     
     def clean_name(self, name):
-        return name.replace('<', '-').replace('>', '-').replace('=', '-').replace('.', '')
+        return name.replace('<', '-').replace('>', '-').replace('=', '-').replace('.', '-')
 
     def scrape_categories(self, url=None, parent_name="", visited_urls=None):
         if visited_urls is None:
@@ -233,11 +234,13 @@ class WebScraper:
 
     def extract_product_details(self, soup, category_name):
         """Extract product details from the product page."""
+        product_code = self.get_product_code(soup)
         name = self.get_product_name(soup)
         name = self.clean_name(name)
         friendly_url = self.name_to_friendly_url(name)
         price = self.get_product_price(soup)
         description = self.get_product_description(soup)
+        manufacturer = self.get_product_manufacturer(soup)
         images = self.get_product_images(soup)
 
         downloaded_images = []
@@ -247,13 +250,55 @@ class WebScraper:
             downloaded_images.append(filename)
 
         return {
+            "code": product_code,
             "name": name,
             "price": price,
             "description": description,
+            "manufacturer": manufacturer,
             "images": images,
             "categories": set([category_name]),
             "url": friendly_url
         }
+
+    def get_product_manufacturer(self, soup):
+        """Extract the product manufacturer (Producent) from possible HTML patterns.
+        """
+        manu = soup.select_one("div.row.manufacturer")
+        if manu:
+            inner_anchor = manu.select_one("a.brand")
+            if inner_anchor:
+                title = inner_anchor.get("title")
+                if title:
+                    t = title.strip()
+                    if t and t != "-":
+                        return t
+                text = inner_anchor.get_text(strip=True)
+                if text and text != "-":
+                    return text
+                img = inner_anchor.find("img")
+                if img and img.get("alt"):
+                    alt = img.get("alt").strip()
+                    if alt and alt != "-":
+                        return alt
+
+            em = manu.find("em")
+            if em:
+                parts = [s for s in manu.stripped_strings]
+                if len(parts) >= 2:
+                    candidate = parts[1].strip()
+                    if candidate and candidate != "-":
+                        return candidate
+
+        return "-"
+    
+    def get_product_code(self, soup):
+        """Extract the product code."""
+        span = soup.select_one("div.row.code span")
+        if span:
+            code = span.get_text(strip=True)
+            if code and code != "-":
+                return code
+        return "-"
 
     def get_product_name(self, soup):
         """Extract the product name."""
@@ -263,7 +308,11 @@ class WebScraper:
     def get_product_price(self, soup):
         """Extract the product price."""
         price_tag = soup.select_one("em.main-price, span.main-price, span.price")
-        return price_tag.get_text(strip=True) if price_tag else "N/A"
+        if not price_tag:
+            return "N/A"
+        raw = price_tag.get_text(strip=True) 
+        norm = raw.replace('\xa0', ' ').replace(' ', '').replace(',', '.').replace('zł', '')
+        return norm
 
     def get_product_description(self, soup):
         """Extract the product description."""
@@ -291,73 +340,120 @@ class WebScraper:
         except:
             print("Failed to download image:", img_url)
     
-    def save_to_csv(self):
+    def get_parent_category_id(self, parts):
+        if len(parts) == 1:
+            return "2"
+
+        parent_full = ' > '.join(parts[:-1])
+        parent_category = self.category_name_to_id.get(parent_full, "")
+
+        # fallback: match parent by last segment
+        if not parent_category:
+            parent_leaf = parts[-2]
+            for key, val in self.category_name_to_id.items():
+                if key.split(' > ')[-1] == parent_leaf:
+                    return val
+
+        return parent_category
+
+    def get_deepest_category_ids(self, product_categories):
+        """
+        Given a list of raw category paths for a product, returns a list of
+        mapped PrestaShop category IDs that are the deepest in the hierarchy.
+        """
+        raw_cats = [c.strip() for c in product_categories if c and c.strip()]
+
+        deepest = []
+        for c in raw_cats:
+            is_parent = any(
+                (other != c and other.startswith(c + ' > '))
+                for other in raw_cats
+            )
+            if not is_parent:
+                deepest.append(c)
+
+        category_ids = []
+        for cat_path in deepest:
+            cat_id = self.category_name_to_id.get(cat_path)
+
+            if not cat_id:
+                leaf = cat_path.split(' > ')[-1]
+                for key, val in self.category_name_to_id.items():
+                    if key.split(' > ')[-1] == leaf:
+                        cat_id = val
+                        break
+
+            category_ids.append(cat_id if cat_id else cat_path)
+
+        return category_ids
+
+    def save_products_to_csv(self):
         """
         Saves products to a CSV file in a format compatible with PrestaShop.
         
         PrestaShop fields:
-        - Aktywny: 1 (active)
+        - Indeks #: product code
+        - Aktywny (0 lub 1): 1 (active)
         - Nazwa: product name
-        - Kategoria
-        - Cena
-        - Opis
-        - Dostępne do zamówienia: 1
-        - W sprzedaży: 1
-        - Ilość: 100
+        - ID reguły podatku: 1
+        - Cena bez podatku. (netto): price without tax
+        - Cena zawiera podatek. (brutto): price with tax
+        - Marka: manufacturer
+        - Opis: product description
+        - Dostępne do zamówienia (0 = Nie, 1 = Tak): 1
+        - W sprzedaży (0 lub 1): 1
+        - Ilość: random number between 0 and 10
         - Meta-tytuł: SEO title
+        - Kategorie (x,y,z...): category IDs separated by |
+        - Adresy URL zdjęcia (x,y,z...): image URLs separated by |
         - Przepisany URL: friendly URL
-        - URL zdjęć
         """
         csv_path = os.path.join(self.output_folder, "products.csv")
         with open(csv_path, "w", newline="", encoding="utf-8") as file:
             writer = csv.writer(file, delimiter=";")
             
             writer.writerow([
-                "Aktywny", "Nazwa", "Cena", "Opis", "Dostępne do zamówienia", "W sprzedaży", "Ilość","URL zdjęć", "Kategorie", "Przepisany URL"
+                "Indeks #",
+                "Aktywny (0 lub 1)",
+                "Nazwa",
+                "ID reguły podatku",
+                "Cena bez podatku. (netto)",
+                "Cena zawiera podatek. (brutto)",
+                "Marka",
+                "Opis", 
+                "Dostępne do zamówienia (0 = Nie, 1 = Tak)", 
+                "W sprzedaży (0 lub 1)", 
+                "Ilość",
+                "Adresy URL zdjęcia (x,y,z...)", 
+                "Kategorie (x,y,z...)", 
+                "Przepisany URL"
             ])
 
             for product in self.products_dictionary.values():
+                product_code = product.get("code", "")
                 name = product["name"]
-                price = product["price"].replace(' zł', '').replace(',', '.') if product["price"] else "0"
+                manufacturer = product.get("manufacturer", "")
+                price_brutto = product.get("price") or "0"
+                price_netto = str(round(float(price_brutto) / 1.23, 2)) if price_brutto != "0" else "0" #
                 description = product["description"]
-                
-                # Keep only the deepest (leaf) categories for this product.
-                # product["categories"] contains category paths like 'A > B > C' or main 'A'.
-                raw_cats = [c.strip() for c in product.get("categories", []) if c and c.strip()]
 
-                # Remove any category that is a parent of another category in the set.
-                deepest = []
-                for c in raw_cats:
-                    is_parent = any((other != c and other.startswith(c + ' > ')) for other in raw_cats)
-                    if not is_parent:
-                        deepest.append(c)
-
-                # Map deepest category paths to IDs using the mapping created in save_categories_csv.
-                # If exact path not found, fall back to matching by leaf name.
-                category_ids = []
-                for cat_path in deepest:
-                    cat_id = self.category_name_to_id.get(cat_path)
-                    if not cat_id:
-                        leaf = cat_path.split(' > ')[-1]
-                        # try to find any category whose leaf matches
-                        for key, val in self.category_name_to_id.items():
-                            if key.split(' > ')[-1] == leaf:
-                                cat_id = val
-                                break
-                    # If still not found, keep the original name as fallback
-                    category_ids.append(cat_id if cat_id else cat_path)
+                category_ids = self.get_deepest_category_ids(product.get("categories", []))
 
                 categories = "|".join(category_ids)
                 image_urls = "|".join(product["images"])
                 
                 writer.writerow([
+                    product_code,
                     "1",
                     name,
-                    price,
+                    "1",
+                    price_netto,
+                    price_brutto,
+                    manufacturer,
                     description,
                     "1",
                     "1",
-                    "100",
+                    random.randint(0,10),
                     image_urls,
                     categories,
                     product["url"]
@@ -374,7 +470,6 @@ class WebScraper:
         - Aktywny: 1 (aktywna)
         - Nazwa: nazwa kategorii
         - Kategoria nadrzędna: nazwa kategorii nadrzędnej lub puste dla głównych
-        - Główna kategoria: 1 dla głównych kategorii, 0 dla podkategorii
         - Opis: opis kategorii (może być pusty)
         - Meta-tytuł: tytuł SEO (może być pusty)
         - Opis meta: opis SEO (może być pusty)
@@ -425,7 +520,6 @@ class WebScraper:
                 "Aktywny (0/1)", 
                 "Nazwa*",
                 "Kategoria nadrzędna",
-                "Główna kategoria (0/1)",
                 "Meta-tytuł",
                 "Opis meta",
                 "Przepisany URL"
@@ -442,12 +536,7 @@ class WebScraper:
                 category_name = parts[-1]
 
                 self.category_name_to_id[cat_name] = str(category_id)
-                
-                parent_category = ""
-                if len(parts) > 1:
-                    parent_category = parts[-2]
-                
-                is_main_category = 1 if len(parts) == 1 else 0
+                parent_category = self.get_parent_category_id(parts)
                 
                 friendly_url = self.name_to_friendly_url(category_name)
 
@@ -460,7 +549,6 @@ class WebScraper:
                     "1",
                     category_name,
                     parent_category,
-                    str(is_main_category),
                     meta_title,
                     meta_description,
                     friendly_url
@@ -492,7 +580,7 @@ class WebScraper:
             print("Category:", category_name)
             self.scrape_products_from_category(category_url, category_name)
 
-        self.save_to_csv()
+        self.save_products_to_csv()
         end_time = time.time()
         print(f"\nScraping took {end_time - start_time:.2f} seconds")
         print("Scraping completed. Data saved to", self.output_folder)
