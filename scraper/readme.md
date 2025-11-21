@@ -6,10 +6,10 @@
 
 Wartości pól:
 
-- Co chcesz zaimportować: **Kategorie**
+- Co chcesz zaimportować: **Kategorie** <br><br>
 - Język pliku: **Polski (Polish)**
 - Separator pola: **;**
-- Separator wielokrotnych wartości: **|**
+- Separator wielokrotnych wartości: **|** <br><br>
 - Usuń wszystkie kategorie przed importem: **Tak**
 - Pomiń ponowne generowanie minatur: **Nie**
 - Wymuś wszystkie numery ID: **Tak**
@@ -27,14 +27,14 @@ Kliknij: ```Importuj```
 
 Wartości pól:
 
-- Co chcesz zaimportować: **Produkty**
+- Co chcesz zaimportować: **Produkty** <br><br>
 - Język pliku: **Polski (Polish)**
 - Separator pola: **;**
-- Separator wielokrotnych wartości: **|**
+- Separator wielokrotnych wartości: **|**<br><br>
 - Usuń wszystkie produkty przed importem: **Tak**
 - Użyć indeksu produktu jako klucza: **Nie**
 - Pomiń ponowne generowanie minatur: **Nie**
-- Wymuś wszystkie numery ID: **Tak**
+- Wymuś wszystkie numery ID: **Nie**
 
 Kliknij: ```Następny krok >```
 
