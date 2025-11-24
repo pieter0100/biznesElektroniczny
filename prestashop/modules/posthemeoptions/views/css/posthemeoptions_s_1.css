@@ -39,4 +39,6 @@
             font-size: 22px;
         }#product.showcase-body #header,.showcase-inner,#product.showcase-body .page-title-wrapper{
             background-color: ;
-        }
+        }.page-title-wrapper.p_tilte_small {
+    display: none
+}
