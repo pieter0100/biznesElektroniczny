@@ -228,3 +228,6 @@ prestashop/dbdata/binlog.*
 
 ### database ###
 prestashop/dbdata/*
+
+### python virtual environment
+.venv
