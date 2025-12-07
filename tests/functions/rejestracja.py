@@ -1,8 +1,4 @@
-from selenium import webdriver
-import random
-from faker import Faker
-from selenium.webdriver.common.by import By
-from time import sleep
+from common import *
 
 
 def testowanie_rejestracji(driver: webdriver):

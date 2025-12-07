@@ -1,8 +1,4 @@
-from selenium import webdriver
-import random
-from selenium.webdriver import Keys
-from selenium.webdriver.common.by import By
-from time import sleep
+from common import *
 
 
 def dodanie_produktow(driver: webdriver, search_phrase: str):

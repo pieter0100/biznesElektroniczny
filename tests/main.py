@@ -1,35 +1,20 @@
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
-from time import sleep
-import random
-from faker import Faker
+from common import *
 
 from functions.dodanieProduktow import dodanie_produktow
 from functions.rejestracja import testowanie_rejestracji
-
-fake = Faker("pl_PL")
-
-# Tworzenie obiektu opcji
-chrome_options = Options()
-
-# argumenty ignorujących błędy SSL
-chrome_options.add_argument("--ignore-certificate-errors")
-chrome_options.add_argument("--allow-insecure-localhost")
-chrome_options.add_argument("--ignore-ssl-errors")
+from functions.usuniecieProduktow import usun_produkty
 
 service = Service()
 driver = webdriver.Chrome(service=service, options=chrome_options)
 
 
-# testowanie_rejestracji(driver)
-dodanie_produktow(driver, "mug")
+while True:
+    akcja = input("Wybierz akcje:")
 
-# while (True):
-#     akcja = input("Wybierz akcje:")
-#
-#     if akcja == "1":
-#         testowanie_rejestracji(driver)
-#     elif akcja == "2":
-#         dodanie_produktow(driver, "mug")
+    if akcja == "1":
+        testowanie_rejestracji(driver)
+    elif akcja == "2":
+        phrase = input("co wyszukac:")
+        dodanie_produktow(driver, phrase)
+    elif akcja == "3":
+        usun_produkty(driver)
