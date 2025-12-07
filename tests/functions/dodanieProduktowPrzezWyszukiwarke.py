@@ -1,7 +1,7 @@
 from common import *
 
 
-def dodanie_produktow(driver: webdriver, search_phrase: str):
+def dodanie_produktow_przez_wyszukiwarke(driver: webdriver, search_phrase: str):
     driver.get("https://localhost:8443/")
 
     search_bar = driver.find_element(By.CLASS_NAME, "pos-search__input")
@@ -11,7 +11,7 @@ def dodanie_produktow(driver: webdriver, search_phrase: str):
     product_grid = driver.find_element(By.CSS_SELECTOR, ".row.product_content.grid.row")
 
     # wait for products to load
-    sleep(1)
+    sleep(3)
     products = product_grid.find_elements(By.CSS_SELECTOR, ".item-product")
     if len(products) == 0:
         print("brak produktow w wyszukaniu")

@@ -4,10 +4,12 @@ from common import *
 def usun_produkty(driver):
     driver.get("https://localhost:8443/")
 
-    bestsellers_grid = driver.find_element(By.CSS_SELECTOR, "div[data-id='ybpuyfk']")
-    bestsellers_grid = bestsellers_grid.find_element(By.CSS_SELECTOR, ".slick-track")
+    lista_prdoutkow = driver.find_element(By.CSS_SELECTOR, "section[data-id='ndq3cnv']")
+    lista_prdoutkow = lista_prdoutkow.find_element(
+        By.CSS_SELECTOR, ".slick-slide.slick-current.slick-active.first-active"
+    )
 
-    products = bestsellers_grid.find_elements(By.CSS_SELECTOR, ".slick-slide")[:3]
+    products = lista_prdoutkow.find_elements(By.CSS_SELECTOR, ".slick-slide1")
 
     # dodanie do koszyka
     for product in products:
