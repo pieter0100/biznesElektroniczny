@@ -4,12 +4,12 @@ from functions.dodanieProduktowPrzezWyszukiwarke import (
     dodanie_produktow_przez_wyszukiwarke,
 )
 from functions.rejestracja import testowanie_rejestracji
+from functions.sprawdzenieStatusuZamowienia import status_zamowienia
 from functions.usuniecieProduktow import usun_produkty
 from functions.wykonanieZamowienia import wykoanie_zamowienia
 
 service = Service()
 driver = webdriver.Chrome(service=service, options=chrome_options)
-
 
 while True:
     akcja = input("Wybierz akcje:")
@@ -23,3 +23,5 @@ while True:
         usun_produkty(driver)
     elif akcja == "4":
         wykoanie_zamowienia(driver)
+    elif akcja == "5":
+        status_zamowienia(driver)
