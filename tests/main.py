@@ -6,6 +6,7 @@ from time import sleep
 import random
 from faker import Faker
 
+from functions.dodanieProduktow import dodanie_produktow
 from functions.rejestracja import testowanie_rejestracji
 
 fake = Faker("pl_PL")
@@ -21,7 +22,14 @@ chrome_options.add_argument("--ignore-ssl-errors")
 service = Service()
 driver = webdriver.Chrome(service=service, options=chrome_options)
 
-driver.get("https://localhost:8443/")
 
+# testowanie_rejestracji(driver)
+dodanie_produktow(driver, "mug")
 
-testowanie_rejestracji(driver)
+# while (True):
+#     akcja = input("Wybierz akcje:")
+#
+#     if akcja == "1":
+#         testowanie_rejestracji(driver)
+#     elif akcja == "2":
+#         dodanie_produktow(driver, "mug")
