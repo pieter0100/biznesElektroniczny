@@ -402,7 +402,6 @@ class WebScraper:
         - Marka: manufacturer
         - Opis: product description
         - Dostępne do zamówienia (0 = Nie, 1 = Tak): 1
-        - W sprzedaży (0 lub 1): 1
         - Ilość: random number between 0 and 10
         - Meta-tytuł: SEO title
         - Kategorie (x,y,z...): category IDs separated by |
@@ -423,7 +422,6 @@ class WebScraper:
                 "Marka",
                 "Opis", 
                 "Dostępne do zamówienia (0 = Nie, 1 = Tak)", 
-                "W sprzedaży (0 lub 1)", 
                 "Ilość",
                 "Adresy URL zdjęcia (x,y,z...)", 
                 "Kategorie (x,y,z...)", 
@@ -452,7 +450,6 @@ class WebScraper:
                     price_brutto,
                     manufacturer,
                     description,
-                    "1",
                     "1",
                     random.randint(0,10),
                     image_urls,
