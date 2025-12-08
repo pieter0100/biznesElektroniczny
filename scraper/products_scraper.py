@@ -4,6 +4,7 @@ import time
 import random
 from urllib.parse import urljoin
 from concurrent.futures import ThreadPoolExecutor
+import re
 
 import requests
 from bs4 import BeautifulSoup
@@ -116,6 +117,15 @@ class ProductsScraper:
         self.products_dictionary[product_url] = product_data
         time.sleep(0.5)
 
+    def sanitize_filename(self, url_or_name: str) -> str:
+        base = url_or_name.split('?', 1)[0]
+        name = os.path.basename(base)
+        # Replace unsafe characters with '-'
+        return re.sub(r'[<>:"/\\|?*]+', '-', name)
+
+    def is_generic_placeholder(self, img_url: str) -> bool:
+        return '/environment/cache/images/productGfx___overlay_500_500.jpg?overlay=1' in img_url
+
     def extract_product_details(self, soup, category_name):
         product_code = self.get_product_code(soup)
         name = self.get_product_name(soup)
@@ -128,7 +138,14 @@ class ProductsScraper:
 
         downloaded_images = []
         for img_url in images:
-            filename = os.path.join(self.output_folder, "images", os.path.basename(img_url))
+            safe_name = self.sanitize_filename(img_url)
+            # If generic placeholder, prefix with product identifier to avoid overwrites
+            if self.is_generic_placeholder(img_url):
+                product_id = self.get_product_code(soup)
+                if not product_id or product_id == '-':
+                    product_id = self.name_to_friendly_url(self.get_product_name(soup))
+                safe_name = f"{self.sanitize_filename(product_id)}-{safe_name}"
+            filename = os.path.join(self.output_folder, "images", safe_name)
             self.download_image(img_url, filename)
             downloaded_images.append(filename)
 
@@ -198,7 +215,7 @@ class ProductsScraper:
 
     def get_product_images(self, soup):
         images = []
-        for img_tag in soup.select("a[href^='/userdata/public/gfx/'], img[src^='/userdata/public/gfx/']"):
+        for img_tag in soup.select("a[href^='/userdata/public/gfx/'], img[src^='/userdata/public/gfx/'], img[src^='/environment/cache/images/']"):
             img_url = img_tag.get("href") or img_tag.get("src")
             if img_url and len(images) < self.MAX_IMAGES_PER_PRODUCT:
                 images.append(urljoin(self.base_url, img_url))
