@@ -123,9 +123,6 @@ class ProductsScraper:
         # Replace unsafe characters with '-'
         return re.sub(r'[<>:"/\\|?*]+', '-', name)
 
-    def is_generic_placeholder(self, img_url: str) -> bool:
-        return '/environment/cache/images/productGfx___overlay_500_500.jpg?overlay=1' in img_url
-
     def extract_product_details(self, soup, category_name):
         product_code = self.get_product_code(soup)
         name = self.get_product_name(soup)
@@ -137,17 +134,37 @@ class ProductsScraper:
         images = self.get_product_images(soup)
 
         downloaded_images = []
+        
+        # Try to download all available images (real product images first, then placeholders)
+        # get_product_images() returns real images if available, placeholders as fallback
         for img_url in images:
+            if len(downloaded_images) >= self.MAX_IMAGES_PER_PRODUCT:
+                break
             safe_name = self.sanitize_filename(img_url)
-            # If generic placeholder, prefix with product identifier to avoid overwrites
-            if self.is_generic_placeholder(img_url):
+            # If it's a placeholder, prefix with product ID to avoid duplicates
+            if 'productGfx___overlay' in img_url or 'cache/images' in img_url:
                 product_id = self.get_product_code(soup)
                 if not product_id or product_id == '-':
                     product_id = self.name_to_friendly_url(self.get_product_name(soup))
                 safe_name = f"{self.sanitize_filename(product_id)}-{safe_name}"
             filename = os.path.join(self.output_folder, "images", safe_name)
-            self.download_image(img_url, filename)
-            downloaded_images.append(filename)
+            if self.download_image(img_url, filename):
+                downloaded_images.append(safe_name)
+        
+        # If NO images were successfully downloaded, ALWAYS use hardcoded placeholder as fallback
+        if not downloaded_images:
+            # Hardcoded placeholder image URL from winohobby.biz
+            placeholder_url = "https://winohobby.biz/environment/cache/images/productGfx___overlay_500_500.jpg"
+            safe_name = self.sanitize_filename(placeholder_url)
+            product_id = self.get_product_code(soup)
+            if not product_id or product_id == '-':
+                product_id = self.name_to_friendly_url(self.get_product_name(soup))
+            safe_name = f"{self.sanitize_filename(product_id)}-{safe_name}"
+            filename = os.path.join(self.output_folder, "images", safe_name)
+            if self.download_image(placeholder_url, filename):
+                downloaded_images.append(safe_name)
+                reason = "(real images too large)" if images else "(no real images)"
+                logger.info(f"Downloaded placeholder for {product_code} {reason}")
 
         return {
             "code": product_code,
@@ -155,7 +172,7 @@ class ProductsScraper:
             "price": price,
             "description": description,
             "manufacturer": manufacturer,
-            "images": images,
+            "images": downloaded_images,
             "categories": set([category_name]),
             "url": friendly_url
         }
@@ -215,21 +232,61 @@ class ProductsScraper:
 
     def get_product_images(self, soup):
         images = []
-        for img_tag in soup.select("a[href^='/userdata/public/gfx/'], img[src^='/userdata/public/gfx/'], img[src^='/environment/cache/images/']"):
-            img_url = img_tag.get("href") or img_tag.get("src")
-            if img_url and len(images) < self.MAX_IMAGES_PER_PRODUCT:
-                images.append(urljoin(self.base_url, img_url))
+        seen_urls = set()
+        
+        # Get full-sized images from gallery links (both single and multiple images)
+        # In markup: a[href^='/userdata/public/gfx/'] with data-gallery="true" or class="gallery"
+        for link_tag in soup.select("a[href^='/userdata/public/gfx/'][data-gallery='true'], a.gallery[href^='/userdata/public/gfx/']"):
+            img_url = link_tag.get("href")
+            # Skip if we've already seen this URL
+            if img_url and img_url not in seen_urls:
+                if len(images) < self.MAX_IMAGES_PER_PRODUCT:
+                    seen_urls.add(img_url)
+                    images.append(urljoin(self.base_url, img_url))
+        
+        # Fallback: if no real images found, try to get placeholder image
+        if not images:
+            for img_tag in soup.select("img[src*='productGfx___overlay']"):
+                img_url = img_tag.get("src")
+                if img_url and img_url not in seen_urls:
+                    # Remove query parameters from placeholder URL
+                    img_url = img_url.split('?')[0]
+                    if img_url and len(images) < self.MAX_IMAGES_PER_PRODUCT:
+                        seen_urls.add(img_url)
+                        images.append(urljoin(self.base_url, img_url))
+        
         return images
 
     def download_image(self, img_url, filename):
+        MAX_SIZE_BYTES = 3000 * 1024  # PrestaShop limit: 3000 KB
         try:
             response = self.session.get(img_url, stream=True)
             if response.status_code == 200:
+                # Check Content-Length header before downloading
+                content_length = response.headers.get('Content-Length')
+                if content_length and int(content_length) > MAX_SIZE_BYTES:
+                    size_mb = int(content_length) / (1024 * 1024)
+                    logger.warning(f"Image too large ({size_mb:.2f} MB): {img_url}")
+                    return False
+                
+                # Download in chunks, checking size
+                downloaded_size = 0
                 with open(filename, 'wb') as f:
-                    for chunk in response.iter_content(1024):
+                    for chunk in response.iter_content(8192):
+                        downloaded_size += len(chunk)
+                        if downloaded_size > MAX_SIZE_BYTES:
+                            f.close()
+                            os.remove(filename)
+                            logger.warning(f"Image exceeded size limit: {img_url}")
+                            return False
                         f.write(chunk)
+                return True
+            else:
+                logger.warning(f"Failed to download image: {img_url}. Status: {response.status_code}")
+                return False
         except Exception as e:
             logger.warning(f"Failed to download image: {img_url}. Error: {e}")
+            return False
 
     def get_deepest_category_ids(self, product_categories):
         raw_cats = [c.strip() for c in product_categories if c and c.strip()]
@@ -252,6 +309,9 @@ class ProductsScraper:
 
     def save_products_to_csv(self):
         csv_path = os.path.join(self.output_folder, "products.csv")
+        images_csv_path = os.path.join(self.output_folder, "images.csv")
+        
+        # Zapisz produkty BEZ kolumny zdjęć
         with open(csv_path, "w", newline="", encoding="utf-8") as file:
             writer = csv.writer(file, delimiter=";")
             writer.writerow([
@@ -278,7 +338,7 @@ class ProductsScraper:
                 description = product["description"]
                 category_ids = self.get_deepest_category_ids(product.get("categories", []))
                 categories = "|".join(category_ids)
-                image_urls = "|".join(product["images"])
+                # Pusta kolumna zdjęć!
                 writer.writerow([
                     product_code,
                     "1",
@@ -290,11 +350,25 @@ class ProductsScraper:
                     description,
                     "1",
                     random.randint(0, 10),
-                    image_urls,
+                    "",  # Pusta kolumna zdjęć
                     categories,
                     product["url"]
                 ])
+        
+        # Save image map (line number | image filenames)
+        # Numbers correspond to lines in products.csv (starting from 1)
+        with open(images_csv_path, "w", newline="", encoding="utf-8") as file:
+            file.write("Product ID|Image Filenames\n")
+            line_num = 1
+            for product in self.products_dictionary.values():
+                images = product.get("images", [])
+                image_filenames = "|".join(images) if images else ""
+                file.write(f"{line_num}|{image_filenames}\n")
+                line_num += 1
+        
         logger.info(f"Number of products: {len(self.products_dictionary)}")
+        logger.info(f"Saved products.csv (without images)")
+        logger.info(f"Saved images.csv (line number -> image filenames)")
 
     def run(self, categories):
         start = time.time()
