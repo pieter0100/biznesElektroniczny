@@ -6,16 +6,27 @@ import time
 from requests.auth import HTTPBasicAuth
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import urllib3
+import threading
 
 # Disable SSL warnings
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # Konfiguracja
 PRESTASHOP_URL = "https://localhost:8443"  # PrestaShop URL
-API_KEY = "TBUJNF3E67Q59DRRFCYIAX1PP5CMV3VX"   # API Key
+API_KEY = "LMD6FVVFQHEFLXULJUYYZJPDEQH9Y7R9"   # API Key
 IMAGES_CSV_PATH = "winohobby_data/images.csv"  # Path to CSV with image map
 IMAGES_FOLDER = "winohobby_data/images"        # Folder with images
 MAX_THREADS = 5  # Reduced from 10 to avoid overwhelming PrestaShop
+
+# Per-product locks to avoid concurrent uploads to the same product (which can race on directory/thumb creation)
+_product_locks = {}
+_product_locks_guard = threading.Lock()
+
+def _get_product_lock(product_id: str) -> threading.Lock:
+    with _product_locks_guard:
+        if product_id not in _product_locks:
+            _product_locks[product_id] = threading.Lock()
+        return _product_locks[product_id]
 
 def add_image_to_product(product_id, image_path):
     MAX_SIZE_BYTES = 3000 * 1024  # PrestaShop limit: 3000 KB
@@ -51,50 +62,91 @@ def add_image_to_product(product_id, image_path):
         return False
     
     url = f"{PRESTASHOP_URL}/api/images/products/{product_id}"
+
+    # Map actual format to proper MIME type
+    mime_map = {
+        'JPEG': 'image/jpeg',
+        'PNG': 'image/png',
+        'GIF': 'image/gif',
+    }
+    mime_type = mime_map.get(actual_format, 'application/octet-stream')
     
-    try:
-        # Sending image as multipart/form-data with longer timeout for large files
-        timeout = max(60, (file_size // (1024 * 1024)) + 30)  # At least 60s, plus 1s per MB
-        with open(image_path, 'rb') as f:
-            files = {
-                'image': (os.path.basename(image_path), f, 'image/jpeg')
-            }
-            response = requests.post(
-                url,
-                auth=HTTPBasicAuth(API_KEY, ""),
-                files=files,
-                verify=False,
-                timeout=timeout
-            )
-        
-        # Accept 200, 201 and 500 with PHP Notice
-        if response.status_code in [200, 201]:
-            print(f"[OK] {os.path.basename(image_path)} ({actual_format}, {file_size} bytes)")
-            return True
-        elif response.status_code == 500 and "PHP Notice" in response.text:
-            print(f"[OK] {os.path.basename(image_path)} (PHP Notice)")
-            return True
-        else:
-            print(f"[FAIL] {os.path.basename(image_path)} - Product ID: {product_id}, Status: {response.status_code}, Size: {file_size} bytes, Format: {actual_format}")
-            if response.status_code >= 400:
-                # Print more detailed error info
-                try:
-                    error_text = response.text[:700]
-                    if "error" in error_text.lower() or "exception" in error_text.lower() or "message" in error_text.lower():
-                        print(f"  Details: {error_text}")
-                except:
-                    pass
-            return False
-            
-    except requests.exceptions.Timeout:
-        print(f"[TIMEOUT] {os.path.basename(image_path)} - Upload took too long (timeout after {timeout}s)")
-        return False
-    except requests.exceptions.ConnectionError:
-        print(f"[CONN_ERR] {os.path.basename(image_path)} - Connection error to PrestaShop")
-        return False
-    except Exception as e:
-        print(f"[FAIL] {os.path.basename(image_path)} - Exception: {str(e)}")
-        return False
+    # Avoid racing concurrent uploads to the same product (directory/thumb generation)
+    product_lock = _get_product_lock(str(product_id))
+    with product_lock:
+        attempts = 0
+        max_attempts = 3
+        backoff_base = 1.5
+        last_timeout = None
+        while attempts < max_attempts:
+            attempts += 1
+            try:
+                # Sending image as multipart/form-data with longer timeout for large files
+                timeout = max(60, (file_size // (1024 * 1024)) + 30)  # At least 60s, plus ~1s per MB
+                last_timeout = timeout
+                with open(image_path, 'rb') as f:
+                    files = {
+                        'image': (os.path.basename(image_path), f, mime_type)
+                    }
+                    response = requests.post(
+                        url,
+                        auth=HTTPBasicAuth(API_KEY, ""),
+                        files=files,
+                        verify=False,
+                        timeout=timeout
+                    )
+
+                # Accept 200, 201 and 500 with PHP Notice
+                if response.status_code in [200, 201]:
+                    print(f"[OK] {os.path.basename(image_path)} ({actual_format}, {file_size} bytes)")
+                    return True
+                elif response.status_code == 500 and "PHP Notice" in response.text:
+                    print(f"[OK] {os.path.basename(image_path)} (PHP Notice)")
+                    return True
+                else:
+                    # If first try fails with code 76 or transient 5xx, retry with backoff
+                    body_snippet = ""
+                    try:
+                        body_snippet = response.text[:700]
+                    except Exception:
+                        body_snippet = ""
+
+                    if response.status_code in (500,) or "<![CDATA[76]]>" in body_snippet or "Error while creating image" in body_snippet:
+                        if attempts < max_attempts:
+                            sleep_s = (backoff_base ** attempts)
+                            print(f"[RETRY] {os.path.basename(image_path)} - attempt {attempts}/{max_attempts} after {sleep_s:.1f}s (status {response.status_code})")
+                            time.sleep(sleep_s)
+                            continue
+                    # Non-retriable or exhausted
+                    print(f"[FAIL] {os.path.basename(image_path)} - Product ID: {product_id}, Status: {response.status_code}, Size: {file_size} bytes, Format: {actual_format}")
+                    if response.status_code >= 400:
+                        try:
+                            error_text = response.text[:700]
+                            if "error" in error_text.lower() or "exception" in error_text.lower() or "message" in error_text.lower():
+                                print(f"  Details: {error_text}")
+                        except Exception:
+                            pass
+                    return False
+
+            except requests.exceptions.Timeout:
+                if attempts < max_attempts:
+                    sleep_s = (backoff_base ** attempts)
+                    print(f"[TIMEOUT] {os.path.basename(image_path)} - retry {attempts}/{max_attempts} after {sleep_s:.1f}s (timeout {last_timeout}s)")
+                    time.sleep(sleep_s)
+                    continue
+                print(f"[TIMEOUT] {os.path.basename(image_path)} - Upload took too long (timeout after {last_timeout}s)")
+                return False
+            except requests.exceptions.ConnectionError:
+                if attempts < max_attempts:
+                    sleep_s = (backoff_base ** attempts)
+                    print(f"[CONN_ERR] {os.path.basename(image_path)} - retry {attempts}/{max_attempts} after {sleep_s:.1f}s")
+                    time.sleep(sleep_s)
+                    continue
+                print(f"[CONN_ERR] {os.path.basename(image_path)} - Connection error to PrestaShop")
+                return False
+            except Exception as e:
+                print(f"[FAIL] {os.path.basename(image_path)} - Exception: {str(e)}")
+                return False
 
 def main():
     if not os.path.exists(IMAGES_CSV_PATH):
