@@ -96,43 +96,57 @@ def formularz_konta(driver: webdriver):
 
 
 def formularz_wysylki(driver):
+    wait = WebDriverWait(driver, 10)
     fake = Faker("pl_PL")
 
-    adress = driver.find_element(By.CSS_SELECTOR, "input[name='address1']")
+    adress = wait.until(
+        EC.visibility_of_element_located((By.CSS_SELECTOR, "input[name='address1']"))
+    )
     adress.clear()
     adress.send_keys("testowa 10")
 
-    postcode = driver.find_element(By.CSS_SELECTOR, "input#field-postcode")
+    postcode = wait.until(
+        EC.visibility_of_element_located((By.CSS_SELECTOR, "input#field-postcode"))
+    )
     postcode.clear()
     postcode.send_keys(fake.postcode())
 
-    city = driver.find_element(By.CSS_SELECTOR, "input#field-city")
+    city = wait.until(
+        EC.visibility_of_element_located((By.CSS_SELECTOR, "input#field-city"))
+    )
     city.clear()
     city.send_keys(fake.city())
 
-    sleep(2)
-    submit = driver.find_element(By.CSS_SELECTOR, "button[name='confirm-addresses']")
+    # Usunięto sleep(2) - czekamy na klikalność przycisku
+    submit = wait.until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, "button[name='confirm-addresses']"))
+    )
     submit.click()
 
 
 def formualrz_dostawa(driver):
-    fake = Faker("pl_PL")
+    wait = WebDriverWait(driver, 10)
 
-    delivery_options_grid = driver.find_element(By.CLASS_NAME, "delivery-options")
-
-    delivery_options_list = delivery_options_grid.find_elements(
-        By.CSS_SELECTOR, ".delivery-option.js-delivery-option"
+    delivery_options_list = wait.until(
+        EC.presence_of_all_elements_located(
+            (By.CSS_SELECTOR, ".delivery-option.js-delivery-option")
+        )
     )
 
-    delivery_option = random.choice(delivery_options_list)
-    delivery_option = delivery_option.find_element(
+    random_option_row = random.choice(delivery_options_list)
+
+    radio_input = random_option_row.find_element(
         By.CSS_SELECTOR, "input[type='radio']"
     )
-    delivery_option.click()
 
-    sleep(1)
+    driver.execute_script("arguments[0].click();", radio_input)
 
-    driver.find_element(By.CSS_SELECTOR, "button[name='confirmDeliveryOption']").click()
+    confirm_button = wait.until(
+        EC.element_to_be_clickable(
+            (By.CSS_SELECTOR, "button[name='confirmDeliveryOption']")
+        )
+    )
+    confirm_button.click()
 
 
 def formualrz_platnosc(driver):
