@@ -1,0 +1,2 @@
+[2025-12-14 11:34:34] ps_accounts.ERROR: Unable to get or refresh owner/shop token : Unable to refresh shop token : OAuth2 client not configured [] []
+[2025-12-14 11:35:03] ps_accounts.ERROR: Unable to get or refresh owner/shop token : Unable to refresh shop token : OAuth2 client not configured [] []
