@@ -18830,9 +18830,9 @@ body:not(.page-index) .sticky-inner.absolute-header-full {
     position: relative !important;
 }
 
-.js-visible-password {
-    display: none !important; 
-    visibility: hidden !important;
+.input-group-append button[data-action="show-password"], 
+.type-password button {
+    display: none !important;
 }
 
 .input-group-btn {
