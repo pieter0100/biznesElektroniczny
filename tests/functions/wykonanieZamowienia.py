@@ -119,7 +119,9 @@ def formularz_wysylki(driver):
 
     # Usunięto sleep(2) - czekamy na klikalność przycisku
     submit = wait.until(
-        EC.element_to_be_clickable((By.CSS_SELECTOR, "button[name='confirm-addresses']"))
+        EC.element_to_be_clickable(
+            (By.CSS_SELECTOR, "button[name='confirm-addresses']")
+        )
     )
     submit.click()
 
@@ -135,9 +137,7 @@ def formualrz_dostawa(driver):
 
     random_option_row = random.choice(delivery_options_list)
 
-    radio_input = random_option_row.find_element(
-        By.CSS_SELECTOR, "input[type='radio']"
-    )
+    radio_input = random_option_row.find_element(By.CSS_SELECTOR, "input[type='radio']")
 
     driver.execute_script("arguments[0].click();", radio_input)
 
