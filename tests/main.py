@@ -13,19 +13,21 @@ service = Service()
 driver = webdriver.Chrome(service=service, options=chrome_options)
 
 
-while True:
-    akcja = input("Wybierz akcje:")
-
-    if akcja == "1":
-        testowanie_rejestracji(driver)
-    elif akcja == "2":
-        phrase = input("co wyszukac:")
-        dodanie_produktow_przez_wyszukiwarke(driver, phrase)
-    elif akcja == "3":
-        usun_produkty(driver)
-    elif akcja == "4":
-        wykoanie_zamowienia(driver)
-    elif akcja == "5":
-        status_zamowienia(driver)
-    elif akcja == "6":
-        pobierz_fakture(driver)
+testowanie_rejestracji(driver)
+#
+# while True:
+#     akcja = input("Wybierz akcje:")
+#
+#     if akcja == "1":
+#         testowanie_rejestracji(driver)
+#     elif akcja == "2":
+#         phrase = input("co wyszukac:")
+#         dodanie_produktow_przez_wyszukiwarke(driver, phrase)
+#     elif akcja == "3":
+#         usun_produkty(driver)
+#     elif akcja == "4":
+#         wykoanie_zamowienia(driver)
+#     elif akcja == "5":
+#         status_zamowienia(driver)
+#     elif akcja == "6":
+#         pobierz_fakture(driver)
