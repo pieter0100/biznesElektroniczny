@@ -33,6 +33,16 @@ class ProductsScraper:
         os.makedirs(self.IMAGE_FOLDER, exist_ok=True)
         self.products_dictionary = {}
         self.category_name_to_id = category_name_to_id or {}
+        # Track existing image filenames to avoid overwriting when pages reuse the same basename
+        try:
+            self._existing_image_names = set(
+                f for f in os.listdir(self.IMAGE_FOLDER) if os.path.isfile(os.path.join(self.IMAGE_FOLDER, f))
+            )
+        except Exception:
+            self._existing_image_names = set()
+        # Guard for concurrent filename assignment across threads
+        import threading as _threading
+        self._image_name_lock = _threading.Lock()
 
     def get_page(self, url):
         try:
@@ -123,6 +133,25 @@ class ProductsScraper:
         # Replace unsafe characters with '-'
         return re.sub(r'[<>:"/\\|?*]+', '-', name)
 
+    def _make_unique_filename(self, desired_name: str) -> str:
+        """Ensure the filename is unique within IMAGE_FOLDER by appending a numeric suffix.
+
+        Examples:
+          image.jpg -> image-1.jpg (if image.jpg exists), image-2.jpg, ...
+          noext    -> noext-1 (if noext exists)
+        """
+        name, ext = os.path.splitext(desired_name)
+        candidate = desired_name
+        with self._image_name_lock:
+            counter = 1
+            # Avoid collisions with already existing or scheduled names
+            while candidate in self._existing_image_names:
+                candidate = f"{name}-{counter}{ext}"
+                counter += 1
+            # Reserve the candidate so other threads won't pick the same name
+            self._existing_image_names.add(candidate)
+        return candidate
+
     def extract_product_details(self, soup, category_name):
         product_code = self.get_product_code(soup)
         name = self.get_product_name(soup)
@@ -147,9 +176,10 @@ class ProductsScraper:
                 if not product_id or product_id == '-':
                     product_id = self.name_to_friendly_url(self.get_product_name(soup))
                 safe_name = f"{self.sanitize_filename(product_id)}-{safe_name}"
-            filename = os.path.join(self.output_folder, "images", safe_name)
+            unique_name = self._make_unique_filename(safe_name)
+            filename = os.path.join(self.output_folder, "images", unique_name)
             if self.download_image(img_url, filename):
-                downloaded_images.append(safe_name)
+                downloaded_images.append(unique_name)
         
         # If NO images were successfully downloaded, ALWAYS use hardcoded placeholder as fallback
         if not downloaded_images:
@@ -160,9 +190,10 @@ class ProductsScraper:
             if not product_id or product_id == '-':
                 product_id = self.name_to_friendly_url(self.get_product_name(soup))
             safe_name = f"{self.sanitize_filename(product_id)}-{safe_name}"
-            filename = os.path.join(self.output_folder, "images", safe_name)
+            unique_name = self._make_unique_filename(safe_name)
+            filename = os.path.join(self.output_folder, "images", unique_name)
             if self.download_image(placeholder_url, filename):
-                downloaded_images.append(safe_name)
+                downloaded_images.append(unique_name)
                 reason = "(real images too large)" if images else "(no real images)"
                 logger.info(f"Downloaded placeholder for {product_code} {reason}")
 
