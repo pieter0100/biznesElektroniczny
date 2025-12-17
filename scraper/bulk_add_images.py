@@ -14,8 +14,8 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 # Konfiguracja
 PRESTASHOP_URL = "https://localhost:8443"  # PrestaShop URL
 API_KEY = "IVY7MAHSQ37PSTRESFWBZIYANGVVU1IQ"   # API Key
-IMAGES_CSV_PATH = "winohobby_data/images.csv"  # Path to CSV with image map
-IMAGES_FOLDER = "winohobby_data/images"        # Folder with images
+IMAGES_CSV_PATH = os.path.join(os.path.dirname(__file__), "..","winohobby_data","images.csv")  # Path to CSV with image map
+IMAGES_FOLDER = os.path.join(os.path.dirname(__file__), "..","winohobby_data","images")        # Folder with images
 MAX_THREADS = 5  # Reduced from 10 to avoid overwhelming PrestaShop
 
 # Per-product locks to avoid concurrent uploads to the same product (which can race on directory/thumb creation)
