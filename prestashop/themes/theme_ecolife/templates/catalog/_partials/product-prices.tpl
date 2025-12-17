@@ -22,6 +22,22 @@
  * @copyright Since 2007 PrestaShop SA and Contributors
  * @license   https://opensource.org/licenses/AFL-3.0 Academic Free License 3.0 (AFL-3.0)
  *}
+
+<div class="product-delivery-info" style="display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; font-size: 13px; line-height: 1.4;">
+    <div class="info-item">
+        <span style="color: #666;">Dostępność:</span><br>
+        <strong style="color: #333;">duża ilość</strong>
+    </div>
+    <div class="info-item">
+        <span style="color: #666;">Wysyłka w:</span><br>
+        <strong style="color: #333;">24 godziny</strong>
+    </div>
+    <div class="info-item">
+        <span style="color: #666;">Dostawa:</span><br>
+        <strong style="color: #333;">od 14,90 zł</strong>
+    </div>
+</div>
+
 {if $product.show_price}
   <div class="product-prices js-product-prices">
     {block name='product_discount'}
