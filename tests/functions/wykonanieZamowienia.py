@@ -34,34 +34,48 @@ def dodaj_do_koszyka_produkty(driver):
     make_order_button.click()
 
 
-def formularz_konta(driver):
+def formularz_konta(driver: webdriver):
+    wait = WebDriverWait(driver, 10)
     fake = Faker("pl_PL")
 
-    gender_radio_button = driver.find_element(
-        By.CSS_SELECTOR, f"input#field-id_gender-{random.randint(1, 2)}"
+    gender_id = random.randint(1, 2)
+    gender_radio_button = wait.until(
+        EC.presence_of_element_located(
+            (By.CSS_SELECTOR, f"input#field-id_gender-{gender_id}")
+        )
     )
-    gender_radio_button.click()
+    driver.execute_script("arguments[0].click();", gender_radio_button)
 
-    firstname_input = driver.find_element(By.CSS_SELECTOR, "input#field-firstname")
+    firstname_input = wait.until(
+        EC.visibility_of_element_located((By.CSS_SELECTOR, "input#field-firstname"))
+    )
     firstname_input.clear()
     firstname_input.send_keys(fake.first_name())
 
-    surname_input = driver.find_element(By.CSS_SELECTOR, "input#field-lastname")
+    surname_input = wait.until(
+        EC.visibility_of_element_located((By.CSS_SELECTOR, "input#field-lastname"))
+    )
     surname_input.clear()
     surname_input.send_keys(fake.last_name())
 
-    email_input = driver.find_element(By.CSS_SELECTOR, "input#field-email")
+    email_input = wait.until(
+        EC.visibility_of_element_located((By.CSS_SELECTOR, "input#field-email"))
+    )
     email_input.clear()
     email_input.send_keys(fake.email())
 
-    password_input = driver.find_element(By.CSS_SELECTOR, "input#field-password")
-    password_input.clear()
-    password_input.send_keys(fake.password())
+    # password_input = wait.until(
+    #     EC.visibility_of_element_located((By.CSS_SELECTOR, "input#field-password"))
+    # )
+    # password_input.clear()
+    # password_input.send_keys(fake.password())
 
-    birthday_input = driver.find_element(By.CSS_SELECTOR, "input#field-birthday")
+    birthday_input = wait.until(
+        EC.visibility_of_element_located((By.CSS_SELECTOR, "input#field-birthday"))
+    )
     birthday_input.clear()
     birthday_input.send_keys(
-        f"{random.randint(1960, 2005)}-{random.randint(0, 12)}-{random.randint(1, 27)}"
+        f"{random.randint(1960, 2005)}-{random.randint(1, 12)}-{random.randint(1, 27)}"
     )
 
     newsletter_checkbox = driver.find_element(By.NAME, "optin")
@@ -73,10 +87,10 @@ def formularz_konta(driver):
     psgdpr_checkbox = driver.find_element(By.NAME, "psgdpr")
     psgdpr_checkbox.click()
 
-    sleep(1)
-
-    submit_button = driver.find_element(
-        By.CSS_SELECTOR, ".continue.btn.btn-primary.float-xs-right"
+    submit_button = wait.until(
+        EC.element_to_be_clickable(
+            (By.CSS_SELECTOR, ".continue.btn.btn-primary.float-xs-right")
+        )
     )
     submit_button.click()
 

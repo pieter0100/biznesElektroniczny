@@ -65,7 +65,6 @@ def testowanie_rejestracji(driver: webdriver):
     psgdpr_checkbox = driver.find_element(By.NAME, "psgdpr")
     psgdpr_checkbox.click()
 
-    # Usunięto sleep(2) - wait.until przy submit wystarczy
     submit_button = wait.until(
         EC.element_to_be_clickable((By.CSS_SELECTOR, ".form-control-submit"))
     )
