@@ -27,8 +27,10 @@
     <span class="control-label">{l s='Quantity' d='Shop.Theme.Catalog'}</span>
 
     {block name='product_quantity'}
-      <div class="product-quantity clearfix">
-        <div class="qty">
+      {* 1. KONTENER ILOŚCI I PRZYCISKU *}
+      <div class="product-quantity clearfix" style="display: flex; flex-wrap: wrap; align-items: center;">
+        
+        <div class="qty" style="margin-bottom: 15px; margin-right: 10px;">
           <input
             type="number"
             name="qty"
@@ -43,40 +45,72 @@
               min="1"
             {/if}
             class="input-group"
-            aria-label="{l s='Quantity' d='Shop.Theme.Actions'}"
+            style="height: 45px; width: 65px; text-align: center; border: 1px solid #ddd; border-radius: 4px;"
           >
         </div>
 
-        <div class="add">
+        <div class="add" style="width: 100%; order: 2; margin-bottom: 10px;">
           <button
             class="btn btn-primary add-to-cart"
             data-button-action="add-to-cart"
             type="submit"
-            {if !$product.add_to_cart_url}
-              disabled
-            {/if}
+            {if !$product.add_to_cart_url}disabled{/if}
+            style="width: 100%; background-color: #e23b1a; color: white; border: none; height: 55px; font-weight: bold; text-transform: uppercase; font-size: 18px; border-radius: 4px;"
           >
-            <i class="material-icons shopping-cart">&#xE547;</i>
             {l s='Add to cart' d='Shop.Theme.Actions'}
           </button>
         </div>
-		<div class="cart_button">
-			{hook h='displayAfterButtonCart'}
-		</div>
-		<div class="buy">
-          <button
-            class="btn btn-primary buy-now"
-            data-button-action="buy-now"
-            type="submit"
-            {if !$product.add_to_cart_url}
-              disabled
-            {/if}
-          >
-            <i class="icon-rt-cart-outline"></i> {l s='Buy now' d='Shop.Theme.Actions'}
-          </button>
+
+        <div style="display: none !important;">
+          {hook h='displayAfterButtonCart'}
+          {hook h='displayProductActions' product=$product}
         </div>
-        {hook h='displayProductActions' product=$product}
-		
+      </div> {* KONIEC div product-quantity *}
+
+      {* 2. NOWA SEKCJA POD PRZYCISKIEM (POZA FLEXEM) *}
+      <div class="product-features-mini" style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; clear: both;">
+        <div class="product-rating-line" style="margin-bottom: 10px; display: flex; align-items: center;">
+            <span style="margin-right: 10px;">Ocena:</span>
+            <div class="stars" style="color: #ccc;">
+                <i class="material-icons">star_border</i>
+                <i class="material-icons">star_border</i>
+                <i class="material-icons">star_border</i>
+                <i class="material-icons">star_border</i>
+                <i class="material-icons">star_border</i>
+            </div>
+        </div>
+
+        <div class="product-meta-data" style="display: flex; gap: 40px; margin-bottom: 20px;">
+            <div>
+                <span style="color: #666; font-size: 13px;">Producent:</span><br>
+                <strong>
+                    {if isset($product.id_manufacturer) && $product.id_manufacturer > 0}
+                        {$product.manufacturer_name}
+                    {else}
+                        Nieokreślony
+                    {/if}
+                </strong>
+            </div>
+            <div>
+                <span style="color: #666; font-size: 13px;">Kod produktu:</span><br>
+                <strong>{$product.reference}</strong>
+            </div>
+        </div>
+
+        <div class="product-actions-links" style="list-style: none; padding: 0; font-size: 14px; border-top: 1px solid #eee; padding-top: 15px;">
+            <div style="margin-bottom: 8px; display: flex; align-items: center;">
+                <i class="material-icons" style="margin-right: 8px; font-size: 18px;">mail_outline</i>
+                <a href="#" style="text-decoration: underline; color: #333;">zapytaj o produkt</a>
+            </div>
+            <div style="margin-bottom: 8px; display: flex; align-items: center;">
+                <i class="material-icons" style="margin-right: 8px; font-size: 18px;">favorite_border</i>
+                <a href="#" style="text-decoration: underline; color: #333;">poleć znajomemu</a>
+            </div>
+            <div style="margin-bottom: 8px; display: flex; align-items: center;">
+                <i class="material-icons" style="margin-right: 8px; font-size: 18px;">chat_bubble_outline</i>
+                <a href="#" style="text-decoration: underline; color: #333;">dodaj opinię</a>
+            </div>
+        </div>
       </div>
     {/block}
 
