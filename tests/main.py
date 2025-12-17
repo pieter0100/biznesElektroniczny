@@ -18,7 +18,8 @@ driver = webdriver.Chrome(service=service, options=chrome_options)
 # phrase = "nab"
 # dodanie_produktow_przez_wyszukiwarke(driver, phrase)
 # usun_produkty(driver)
-wykoanie_zamowienia(driver)
+# wykoanie_zamowienia(driver)
+status_zamowienia(driver)
 #
 # while True:
 #     akcja = input("Wybierz akcje:")
