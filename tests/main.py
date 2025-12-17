@@ -13,7 +13,10 @@ service = Service()
 driver = webdriver.Chrome(service=service, options=chrome_options)
 
 
-testowanie_rejestracji(driver)
+# testowanie_rejestracji(driver)
+# phrase = input("co wyszukac:")
+phrase = "nab"
+dodanie_produktow_przez_wyszukiwarke(driver, phrase)
 #
 # while True:
 #     akcja = input("Wybierz akcje:")

@@ -3,6 +3,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 
+
 def testowanie_rejestracji(driver: webdriver):
     # Inicjalizacja Explicit Wait (np. max 10 sekund oczekiwania)
     wait = WebDriverWait(driver, 10)
@@ -16,7 +17,9 @@ def testowanie_rejestracji(driver: webdriver):
             (By.CSS_SELECTOR, f"input#field-id_gender-{random.randint(1,2)}")
         )
     )
-    gender_radio_button = driver.find_element(By.CSS_SELECTOR, f"input#field-id_gender-{random.randint(1,2)}")
+    gender_radio_button = driver.find_element(
+        By.CSS_SELECTOR, f"input#field-id_gender-{random.randint(1,2)}"
+    )
     gender_radio_button.click()
 
     # Dla pól tekstowych czekamy na ich widoczność
