@@ -64,11 +64,11 @@ def formularz_konta(driver: webdriver):
     email_input.clear()
     email_input.send_keys(fake.email())
 
-    # password_input = wait.until(
-    #     EC.visibility_of_element_located((By.CSS_SELECTOR, "input#field-password"))
-    # )
-    # password_input.clear()
-    # password_input.send_keys(fake.password())
+    password_input = wait.until(
+        EC.visibility_of_element_located((By.CSS_SELECTOR, "input#field-password"))
+    )
+    password_input.clear()
+    password_input.send_keys(fake.password())
 
     birthday_input = wait.until(
         EC.visibility_of_element_located((By.CSS_SELECTOR, "input#field-birthday"))

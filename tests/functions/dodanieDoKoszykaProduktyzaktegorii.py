@@ -1,3 +1,5 @@
+from selenium.common import TimeoutException
+
 from common import *
 
 
@@ -33,13 +35,15 @@ def dodaj_z_kategori(driver):
         for _ in range(ilosc_produktu):
             plus_button.click()
 
-        add_to_cart_button = wait.until(
-            EC.element_to_be_clickable(
-                (By.CSS_SELECTOR, "button[data-button-action='add-to-cart']")
-            )
-        )
-
-        add_to_cart_button.click()
+            try:
+                add_to_cart_button = wait.until(
+                    EC.presence_of_element_located(
+                        (By.CSS_SELECTOR, "button[data-button-action='add-to-cart']")
+                    )
+                )
+                add_to_cart_button.click()
+            except TimeoutException:
+                print("zablokowany przycisk")
 
 
 def dodaj_do_koszyka_z_kategori(driver):
@@ -56,7 +60,7 @@ def dodaj_do_koszyka_z_kategori(driver):
         )
     )
 
-    kategorie = driver.find_elements(By.XPATH, "//li[@data-depth='0']")
+    kategorie = lista_kategorii.find_elements(By.XPATH, "//li[@data-depth='0']")
 
     kategoria_1 = random.choice(kategorie)
     kategorie.pop(kategorie.index(kategoria_1))
@@ -78,5 +82,6 @@ def dodaj_do_koszyka_z_kategori(driver):
     dodaj_z_kategori(driver)
 
     # pokaz koszyk
+    sleep(1)
     driver.get("https://localhost:8443/koszyk?action=show")
     sleep(5)
