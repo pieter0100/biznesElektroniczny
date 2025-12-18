@@ -29,18 +29,33 @@
 {/block}
 
 {block name='page_content'}
-    {block name='login_form_container'}
-      <section class="login-form">
-        {render file='customer/_partials/login-form.tpl' ui=$login_form}
-      </section>
-      <hr/>
-      {block name='display_after_login_form'}
-        {hook h='displayCustomerLoginFormAfter'}
-      {/block}
-      <div class="no-account">
-        <a href="{$urls.pages.register}" data-link-action="display-register-form">
-          {l s='No account? Create one here' d='Shop.Theme.Customeraccount'}
-        </a>
-      </div>
-    {/block}
+    <div class="column-container">
+        
+        <div class="column column-login">
+            <h2>{l s='Zaloguj się' d='Shop.Theme.Customeraccount'}</h2>
+            {block name='login_form_container'}
+                <section class="login-form">
+                    {* To jest oryginalny formularz logowania. Usuń z niego link "Nie masz konta?" *}
+                    {render file='customer/_partials/login-form.tpl' ui=$login_form}
+                </section>
+                {block name='display_after_login_form'}
+                    {hook h='displayCustomerLoginFormAfter'}
+                {/block}
+                {* Oryginalny link "Nie masz konta?" jest tutaj już niepotrzebny, bo jest obok *}
+            {/block}
+        </div>
+        
+        <div class="column column-register">
+            <h2>{l s='Zarejestruj się' d='Shop.Theme.Customeraccount'}</h2>
+            <p>{l s='Otrzymasz liczne dodatkowe korzyści:' d='Shop.Theme.Customeraccount'}</p>
+            <ul>
+                <li><i class="material-icons check">check</i> {l s='podgląd statusu realizacji zamówień' d='Shop.Theme.Customeraccount'}</li>
+                <li><i class="material-icons check">check</i> {l s='podgląd historii zakupów' d='Shop.Theme.Customeraccount'}</li>
+                <li><i class="material-icons check">check</i> {l s='brak konieczności wprowadzania swoich danych przy kolejnych zakupach' d='Shop.Theme.Customeraccount'}</li>
+                <li><i class="material-icons check">check</i> {l s='możliwość otrzymania rabatów i kuponów promocyjnych' d='Shop.Theme.Customeraccount'}</li>
+            </ul>
+            <a href="{$urls.pages.register}" class="btn btn-primary register-btn">{l s='ZAREJESTRUJ SIĘ' d='Shop.Theme.Customeraccount'}</a>
+        </div>
+        
+    </div>
 {/block}

@@ -10,6 +10,15 @@ services:
       - prestashop_network
     volumes:
       - ./prestashop/dbdata:/var/lib/mysql
+  maildev: # mailservice falszywy smtp zeby moc odebirac mail typu rejstracaj albo zakup
+    image: maildev/maildev
+    container_name: maildev
+    ports:
+      - "1080:1080"  # Interfejs webowy MailDev
+      - "1025:1025"  # Port SMTP (dla PrestaShop)
+    networks:
+      - prestashop_network
+    restart: unless-stopped
   prestashop:
     container_name: prestashop
     image: prestashop/prestashop:1.7.8.11
@@ -18,6 +27,7 @@ services:
       - mysql
     ports:
       - 8080:80
+      - 8443:443 # port pod https
     environment:
       DB_SERVER: some-mysql
       DB_NAME: prestashop
@@ -25,10 +35,13 @@ services:
       DB_PASSWD: admin
       PS_FOLDER_ADMIN: admin-dev
       PS_FOLDER_INSTALL: install-dev
+    command: /bin/sh -c "a2enmod ssl && apache2-foreground" # wlacza ssl w apache
     networks:
       - prestashop_network
     volumes:
       - ./prestashop:/var/www/html
+      - ./prestashop/apache-config/000-default.conf:/etc/apache2/sites-available/000-default.conf
+      - ./prestashop/apache-config/ssl:/etc/ssl/certs
 
   phpmyadmin:
     image: phpmyadmin

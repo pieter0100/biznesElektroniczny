@@ -18733,3 +18733,180 @@ body:not(.page-index) .sticky-inner.absolute-header-full {
 #search_filters_wrapper #search_filters .h6,
 .h1.namne_details, .product_name_h1 {
   font-weight: var(--font-weight); }
+
+.column-container {
+    display: flex;
+    justify-content: space-between;
+    margin: 40px 0;
+    flex-wrap: wrap;
+}
+
+.column {
+    width: 48%;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.column h2 {
+    font-size: 1.5rem;
+    padding-bottom: 0 !important;
+    border-bottom: none !important;
+    margin-bottom: 20px;
+}
+
+.column-register {
+    border-left: 1px solid #ddd;
+    padding-left: 30px; 
+}
+
+.column-register ul {
+    list-style: none;
+    padding: 0;
+    margin-top: 15px;
+}
+
+.column-register ul li {
+    padding: 5px 0;
+    display: flex;
+    align-items: center;
+}
+
+.column-register ul li .material-icons.check {
+    color: #d9534f;
+    margin-right: 10px;
+    font-size: 1.2rem;
+}
+
+.column-register .register-btn {
+    margin-top: 25px;
+    background: #fff;
+    color: #d9534f; 
+    border: 2px solid #d9534f;
+    text-transform: uppercase;
+    padding: 10px 30px;
+    display: inline-block;
+    font-weight: 600;
+}
+
+.login-form .form-group.row {
+    display: block !important;
+    margin-bottom: 15px !important;
+}
+
+.login-form .form-group.row label.col-md-2,
+.login-form .form-group.row label {
+    display: block !important;
+    width: 100% !important;
+    margin-bottom: 5px; 
+    text-align: left !important;
+    font-weight: 500;
+}
+
+.login-form .form-group.row div.col-md-8,
+.login-form .form-group.row div {
+    width: 100% !important;
+    padding-left: 0 !important;
+}
+
+.login-form label {
+    display: block !important;
+    width: 100% !important;
+    margin-bottom: 5px !important;
+    text-align: left !important;
+    font-weight: 500 !important;
+}
+
+.login-form input[type="email"], 
+.login-form input[type="password"] {
+    width: 100% !important;
+    display: block !important;
+    visibility: visible !important;
+    position: static !important;
+    padding-right: 15px !important; 
+    box-sizing: border-box !important;
+}
+
+.form-group.content-password {
+    position: relative !important;
+}
+
+.input-group-append button[data-action="show-password"], 
+.type-password button {
+    display: none !important;
+}
+
+.input-group-btn {
+    display: none !important;
+}
+
+#field-password {
+    padding-right: 15px !important;
+}
+
+.login-form label {
+    color: #888888 !important;
+    display: block !important;
+    width: 100% !important;
+    margin-bottom: 5px !important;
+    font-weight: 500 !important;
+}
+
+.column-register ul li .material-icons.check {
+    color: #888888 !important;
+    margin-right: 10px;
+    font-size: 1.2rem;
+}
+
+.login-form .form-footer {
+    display: block !important;
+    text-align: left !important;
+    margin-top: 20px !important;
+    visibility: visible !important;
+    flex-direction: initial !important; 
+    align-items: initial !important; 
+}
+
+.login-form .form-footer button[type="submit"] {
+    display: block !important; 
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: auto !important; 
+    height: auto !important;
+    overflow: visible !important;
+    position: static !important; 
+    margin-left: 0 !important; 
+    margin-right: auto !important;
+    border: none !important; 
+    box-shadow: none !important;
+    background: #d9534f !important; 
+    color: #fff !important;
+    text-transform: uppercase;
+    padding: 10px 30px; 
+    font-weight: 600;
+}
+
+.login-form .forgot-password {
+    position: static !important;
+    transform: none !important;
+    background: transparent !important;
+    color: inherit !important; 
+    text-align: left !important; 
+    display: block !important;
+    margin-top: 10px !important;
+}
+
+@media (max-width: 768px) {
+    .column-container {
+        flex-direction: column;
+    }
+    .column {
+        width: 100%;
+        margin-bottom: 30px;
+    }
+    .column-register {
+        border-left: none;
+        border-top: 1px solid #ddd;
+        padding-left: 20px; 
+        padding-top: 30px;
+    }
+}

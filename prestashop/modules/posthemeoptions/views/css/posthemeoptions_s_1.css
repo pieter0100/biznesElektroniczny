@@ -1,22 +1,22 @@
 
          :root {  
-            --hovercolor: #4fb68d; 
+            --hovercolor: #D8331C; 
             --bg_dark: ; 
             --font-weight: 600;  
 			
         }body{
-            font-family: "Open Sans", sans-serif;
+            font-family: "DM Sans", sans-serif;
             font-size: 14px;
             color: #666666;
         }.pos_title h2,.h1,.h2,.h3,.h4,.h5,.h6,h1,h2,h3,h4,h5,h6{
-            font-family: "Open Sans", sans-serif;
+            font-family: "DM Sans", sans-serif;
             color: #253237;
             text-transform: capitalize;
 			font-weight: 600;
         }.pos_title h2{
             font-size: 24px;
         }.pos-title{
-            font-family: "Open Sans", sans-serif;
+            font-family: "DM Sans", sans-serif;
         }.pos-title-column h4{   
             font-size: 20px;
         }#header .sticky-inner.scroll-menu{  
@@ -39,4 +39,6 @@
             font-size: 22px;
         }#product.showcase-body #header,.showcase-inner,#product.showcase-body .page-title-wrapper{
             background-color: ;
-        }
+        }.page-title-wrapper.p_tilte_small {
+    display: none
+}
