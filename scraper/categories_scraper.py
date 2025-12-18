@@ -24,6 +24,35 @@ class CategoriesScraper:
         os.makedirs(self.output_folder, exist_ok=True)
         self.category_name_to_id = {}
 
+    def save_categories_to_json(self, categories):
+        import json
+        json_path = os.path.join(self.output_folder, "categories.json")
+        # Struktura: lista kategorii z podkategoriami (rekurencyjnie)
+        def build_tree(categories):
+            tree = []
+            # Zbuduj słownik parent->children
+            from collections import defaultdict
+            children_map = defaultdict(list)
+            for name, url in categories:
+                parts = name.split(' > ')
+                if len(parts) > 1:
+                    parent = ' > '.join(parts[:-1])
+                    children_map[parent].append((name, url))
+                else:
+                    children_map[None].append((name, url))
+            def build_node(name, url):
+                parts = name.split(' > ')
+                node = {"name": parts[-1]}
+                subs = children_map.get(name, [])
+                if subs:
+                    node["subcategories"] = [build_node(subname, suburl) for subname, suburl in subs]
+                return node
+            return [build_node(name, url) for name, url in children_map[None]]
+        tree = build_tree(categories)
+        with open(json_path, "w", encoding="utf-8") as f:
+            json.dump(tree, f, ensure_ascii=False, indent=2)
+        logger.info(f"Saved categories.json ({len(tree)} root categories)")
+    
     def get_page(self, url):
         try:
             response = self.session.get(url, timeout=10)
@@ -258,6 +287,7 @@ class CategoriesScraper:
             seen.add(key)
             deduped.append((name_norm, url_norm))
         mapping = self.save_categories_csv(deduped)
+        self.save_categories_to_json(deduped)
         end = time.time()
         logger.info(f"Category scraping took {end - start:.2f} seconds")
         return deduped, mapping

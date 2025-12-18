@@ -22,6 +22,42 @@ class ProductsScraper:
     TIMEOUT = 10
     TAX = 1.23
 
+    def save_products_to_json(self):
+        import json
+        json_path = os.path.join(self.output_folder, "products.json")
+        products = []
+        for product in self.products_dictionary.values():
+            # Struktura zgodna z importerem
+            offers = [{"price": product.get("price", "0")}]  # lista z jednym słownikiem
+            properties = []
+            # Możesz dodać tu mapowanie dodatkowych właściwości jeśli są dostępne
+            if product.get("manufacturer") and product["manufacturer"] != "-":
+                properties.append({"type": "manufacturer", "value": product["manufacturer"]})
+            if product.get("code") and product["code"] != "-":
+                properties.append({"type": "code", "value": product["code"]})
+            # Kategorie jako dict poziomów (level1, level2, ...)
+            categories_dict = {}
+            if product.get("categories"):
+                cats = list(product["categories"])
+                for idx, cat in enumerate(cats):
+                    # Weź tylko najgłębszy element ścieżki
+                    categories_dict[f"level{idx+1}"] = cat.split(" > ")[-1]
+            # Zdjęcia - lista nazw plików (możesz dodać prefix/URL jeśli importer tego wymaga)
+            images = product.get("images", [])
+            quantity = product.get("quantity")
+            products.append({
+                "name": product.get("name", ""),
+                "offers": offers,
+                "properties": properties,
+                "description": product.get("description", ""),
+                "categories": categories_dict,
+                "images": images,
+                "quantity": quantity
+            })
+        with open(json_path, "w", encoding="utf-8") as f:
+            json.dump(products, f, ensure_ascii=False, indent=2)
+        logger.info(f"Saved products.json ({len(products)} products)")
+
     def __init__(self, category_name_to_id):
         self.base_url = self.BASE_URL
         self.session = requests.Session()
@@ -161,6 +197,7 @@ class ProductsScraper:
         description = self.get_product_description(soup)
         manufacturer = self.get_product_manufacturer(soup)
         images = self.get_product_images(soup)
+        quantity = random.randint(0, 10)
 
         downloaded_images = []
         
@@ -205,7 +242,8 @@ class ProductsScraper:
             "manufacturer": manufacturer,
             "images": downloaded_images,
             "categories": set([category_name]),
-            "url": friendly_url
+            "url": friendly_url,
+            "quantity": quantity
         }
 
     def get_product_manufacturer(self, soup):
@@ -369,6 +407,7 @@ class ProductsScraper:
                 description = product["description"]
                 category_ids = self.get_deepest_category_ids(product.get("categories", []))
                 categories = "|".join(category_ids)
+                quantity = product.get("quantity")
                 # Pusta kolumna zdjęć!
                 writer.writerow([
                     product_code,
@@ -380,7 +419,7 @@ class ProductsScraper:
                     manufacturer,
                     description,
                     "1",
-                    random.randint(0, 10),
+                    quantity,
                     "",  # Pusta kolumna zdjęć
                     categories,
                     product["url"]
@@ -407,5 +446,6 @@ class ProductsScraper:
             logger.info(f"Category: {category_name}")
             self.scrape_products_from_category(category_url, category_name)
         self.save_products_to_csv()
+        self.save_products_to_json()
         end = time.time()
         logger.info(f"Product scraping took {end - start:.2f} seconds")
