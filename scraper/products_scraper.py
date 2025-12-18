@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 class ProductsScraper:
     BASE_URL = "https://winohobby.biz/"
     USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
-    OUTPUT_FOLDER = os.path.join(os.path.dirname(__file__), "winohobby_data")
+    OUTPUT_FOLDER = os.path.join(os.path.dirname(__file__), "..","winohobby_data")
     IMAGE_FOLDER = os.path.join(OUTPUT_FOLDER, "images")
     MAX_IMAGES_PER_PRODUCT = 2
     THREAD_POOL_SIZE = 10
