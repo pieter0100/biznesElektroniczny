@@ -228,3 +228,8 @@ prestashop/dbdata/binlog.*
 
 ### database ###
 prestashop/dbdata/*
+
+### python ###
+.venv
+__pycache__/
+*.pyc
