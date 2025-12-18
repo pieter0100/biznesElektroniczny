@@ -7175,7 +7175,11 @@ class ProductCore extends ObjectModel
     {
         $result = $this->getCover($this->id);
 
-        return $result['id_image'];
+        if (is_array($result) && isset($result['id_image'])) {
+            return $result['id_image'];
+        }
+
+        return null;
     }
 
     /**
