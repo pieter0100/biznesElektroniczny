@@ -21,36 +21,23 @@ def uruchom_test(funkcja_testowa, *args):
 def testy():
     service = Service()
     driver = webdriver.Chrome(service=service, options=chrome_options)
+
     dodaj_do_koszyka_z_kategori(driver)
+
     phrase = "nab"
     dodanie_produktow_przez_wyszukiwarke(driver, phrase)
+
     usun_produkty(driver)
+
     testowanie_rejestracji(driver)
 
-# --- WYKONANIE TESTÓW ---
+    wykoanie_zamowienia(driver)
 
-# 1. Rejestracja
-# uruchom_test(testowanie_rejestracji)
-#
-# # 2. Dodawanie przez wyszukiwarkę
-# phrase = "nab"
-# uruchom_test(dodanie_produktow_przez_wyszukiwarke, phrase)
-#
-# # 3. Usuwanie produktów
-# uruchom_test(usun_produkty)
-#
-# # 4. Wykonanie zamówienia
-# uruchom_test(wykoanie_zamowienia)
-#
 # # 5. Status zamówienia
 # uruchom_test(status_zamowienia)
 #
 # # 6. Pobranie faktury
 # uruchom_test(pobierz_fakture)
-#
-# # 7. Dodanie z kategorii
-# uruchom_test(dodaj_do_koszyka_z_kategori)
 
-# uruchom_test(dodaj_do_koszyka_z_kategori)
 testy()
 input()

@@ -1,3 +1,5 @@
+from selenium.webdriver.support import wait
+
 from common import *
 
 
@@ -99,6 +101,13 @@ def formularz_wysylki(driver):
     wait = WebDriverWait(driver, 10)
     fake = Faker("pl_PL")
 
+    driver.get("https://localhost:8443/koszyk?action=show")
+
+    make_order_button = driver.find_element(
+        By.CSS_SELECTOR, "a[href='https://localhost:8443/zamówienie']"
+    )
+    make_order_button.click()
+
     adress = wait.until(
         EC.visibility_of_element_located((By.CSS_SELECTOR, "input[name='address1']"))
     )
@@ -150,16 +159,30 @@ def formualrz_dostawa(driver):
 
 
 def formualrz_platnosc(driver):
+    wait = WebDriverWait(driver, 10)
+
     # platnosc przelewem
-    driver.find_element(By.CSS_SELECTOR, f"input#payment-option-{2}").click()
-    sleep(0.5)
+    payment_label = wait.until(
+        EC.element_to_be_clickable(
+            (By.CSS_SELECTOR, f"label[for='payment-option-{2}']")
+        )
+    )
+    payment_label.click()
+
     # warunki swiadzeni uslug
-    driver.find_element(
-        By.CSS_SELECTOR, "input[name='conditions_to_approve[terms-and-conditions]']"
-    ).click()
-    sleep(0.5)
+    warunki_checkbox = wait.until (
+        EC.element_to_be_clickable(
+            (By.CSS_SELECTOR, "label[for='conditions_to_approve[terms-and-conditions]']")
+        )
+    )
+    warunki_checkbox.click()
 
     # zloz zamownie
+    confirm_button = wait.until(
+        EC.visibility_of_element_located(
+            (By.CSS_SELECTOR, "div#payment-confirmation")
+        )
+    )
     confirm_button = driver.find_element(By.CSS_SELECTOR, "div#payment-confirmation")
     confirm_button = confirm_button.find_element(By.CSS_SELECTOR, "button")
     confirm_button.click()
@@ -170,9 +193,9 @@ def formualrz_platnosc(driver):
 def wykoanie_zamowienia(driver):
     driver.get("https://localhost:8443/")
 
-    dodaj_do_koszyka_produkty(driver)
+    # dodaj_do_koszyka_produkty(driver)
 
-    formularz_konta(driver)
+    # formularz_konta(driver)
 
     formularz_wysylki(driver)
 
