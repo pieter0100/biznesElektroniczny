@@ -4,7 +4,7 @@ from common import *
 
 
 def dodaj_do_koszyka_produkty(driver):
-    driver.get("https://localhost:8443/")
+    driver.get(ROOT_URL)
 
     lista_prdoutkow = driver.find_element(By.CSS_SELECTOR, "section[data-id='ndq3cnv']")
     lista_prdoutkow = lista_prdoutkow.find_element(
@@ -27,11 +27,12 @@ def dodaj_do_koszyka_produkty(driver):
         )
         driver.execute_script("arguments[0].click();", go_to_summary_element)
 
-    driver.get("https://localhost:8443/koszyk?action=show")
+    url = ROOT_URL + "/koszyk?action=show"
+    driver.get(url)
     sleep(1)
 
     make_order_button = driver.find_element(
-        By.CSS_SELECTOR, "a[href='https://localhost:8443/zamówienie']"
+        By.CSS_SELECTOR, f"a[href='{ROOT_URL}/zamówienie']"
     )
     make_order_button.click()
 
@@ -101,10 +102,11 @@ def formularz_wysylki(driver):
     wait = WebDriverWait(driver, 10)
     fake = Faker("pl_PL")
 
-    driver.get("https://localhost:8443/koszyk?action=show")
+    url = ROOT_URL + "/koszyk?action=show"
+    driver.get(url)
 
     make_order_button = driver.find_element(
-        By.CSS_SELECTOR, "a[href='https://localhost:8443/zamówienie']"
+        By.CSS_SELECTOR, f"a[href='{ROOT_URL}/zamówienie']"
     )
     make_order_button.click()
 
@@ -191,7 +193,7 @@ def formualrz_platnosc(driver):
 
 
 def wykoanie_zamowienia(driver):
-    driver.get("https://localhost:8443/")
+    driver.get(ROOT_URL)
 
     # dodaj_do_koszyka_produkty(driver)
 

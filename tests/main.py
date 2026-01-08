@@ -8,7 +8,7 @@ from functions.pobranieFakturyVAT import pobierz_fakture
 from functions.rejestracja import testowanie_rejestracji
 from functions.sprawdzenieStatusuZamowienia import status_zamowienia
 from functions.usuniecieProduktow import usun_produkty
-from functions.wykonanieZamowienia import wykoanie_zamowienia, dodaj_do_koszyka_produkty
+from functions.wykonanieZamowienia import wykoanie_zamowienia
 
 
 def testy():

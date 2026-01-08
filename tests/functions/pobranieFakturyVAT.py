@@ -3,7 +3,8 @@ from common import *
 
 def pobierz_fakture(driver):
     wait = WebDriverWait(driver, 10)
-    driver.get("https://localhost:8443/historia-zamowien")
+    url = ROOT_URL + "/historia-zamowien"
+    driver.get(url)
 
     # mail = wait.until(
     #     EC.visibility_of_element_located((By.CSS_SELECTOR, "input#field-email"))
