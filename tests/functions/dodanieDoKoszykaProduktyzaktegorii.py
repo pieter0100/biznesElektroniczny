@@ -1,7 +1,26 @@
-from selenium.common import TimeoutException
+from selenium.common import TimeoutException, ElementNotInteractableException
 
 from common import *
 
+
+def pobierz_linki_do_produktow(driver, product_elements):
+    urls = []
+    for product_element in product_elements:
+        url = product_element.find_element(By.CSS_SELECTOR, ".img_block")
+
+        flaga_produktu = product_element.find_element(By.CSS_SELECTOR, ".img_block")
+        flaga_produktu = flaga_produktu.find_element(By.CSS_SELECTOR, ".product-flag")
+
+        flaga_produktu = flaga_produktu.find_elements(By.XPATH, ".//*")
+        if len(flaga_produktu) < 0:
+            print("brak produktu")
+        else:
+            url = url.find_element(By.CSS_SELECTOR, "a")
+            href_string = url.get_attribute("href")
+            urls.append(href_string)
+
+
+    return urls
 
 def dodaj_z_kategori(driver):
     wait = WebDriverWait(driver, 10)
@@ -15,14 +34,14 @@ def dodaj_z_kategori(driver):
     )
 
     # get links
-    urls = []
-    for product_element in product_elements[1:6]:
-        url = product_element.find_element(By.CSS_SELECTOR, ".img_block")
-        url = url.find_element(By.CSS_SELECTOR, "a")
-        href_string = url.get_attribute("href")
-        urls.append(href_string)
+    urls = pobierz_linki_do_produktow(driver, product_elements)
+
+    ilosc_produktow = 0
 
     for link in urls:
+        if ilosc_produktow == 6:
+            break
+
         driver.get(link)
         ilosc_produktu = random.randint(1, 2)
 
@@ -32,18 +51,32 @@ def dodaj_z_kategori(driver):
             )
         )
 
+        czy_dodano_do_koszyka = False
+
+        dostepnosc = driver.find_element(By.ID, "product-availability")
+        tekst = dostepnosc.text
+        if tekst != "":
+            ilosc_produktu = 0
+
         for _ in range(ilosc_produktu):
             plus_button.click()
 
-            try:
-                add_to_cart_button = wait.until(
-                    EC.presence_of_element_located(
-                        (By.CSS_SELECTOR, "button[data-button-action='add-to-cart']")
-                    )
+
+        try:
+            add_to_cart_button = wait.until(
+                EC.presence_of_element_located(
+                    (By.CSS_SELECTOR, "button[data-button-action='add-to-cart']")
                 )
-                add_to_cart_button.click()
-            except TimeoutException:
-                print("zablokowany przycisk")
+            )
+            add_to_cart_button.click()
+            czy_dodano_do_koszyka = True
+
+        except TimeoutException:
+            print("zablokowany przycisk")
+            czy_dodano_do_koszyka = False
+
+        if czy_dodano_do_koszyka:
+            ilosc_produktow += 1
 
 
 def dodaj_do_koszyka_z_kategori(driver):
@@ -84,4 +117,4 @@ def dodaj_do_koszyka_z_kategori(driver):
     # pokaz koszyk
     sleep(1)
     driver.get("https://localhost:8443/koszyk?action=show")
-    sleep(5)
+    sleep(2)
