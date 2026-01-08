@@ -33,6 +33,8 @@ def testy():
 
     wykoanie_zamowienia(driver)
 
+    status_zamowienia(driver)
+
 # # 5. Status zamówienia
 # uruchom_test(status_zamowienia)
 #

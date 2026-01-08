@@ -117,4 +117,4 @@ def dodaj_do_koszyka_z_kategori(driver):
     # pokaz koszyk
     sleep(1)
     driver.get("https://localhost:8443/koszyk?action=show")
-    sleep(5)
+    sleep(2)
