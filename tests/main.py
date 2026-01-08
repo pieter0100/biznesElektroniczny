@@ -31,4 +31,3 @@ def testy():
     pobierz_fakture(driver)
 
 testy()
-input()
