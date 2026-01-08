@@ -18,6 +18,14 @@ def uruchom_test(funkcja_testowa, *args):
     input()
     driver.quit()
 
+def testy():
+    service = Service()
+    driver = webdriver.Chrome(service=service, options=chrome_options)
+    dodaj_do_koszyka_z_kategori(driver)
+    phrase = "nab"
+    dodanie_produktow_przez_wyszukiwarke(driver, phrase)
+    usun_produkty(driver)
+    testowanie_rejestracji(driver)
 
 # --- WYKONANIE TESTÓW ---
 
@@ -44,10 +52,5 @@ def uruchom_test(funkcja_testowa, *args):
 # uruchom_test(dodaj_do_koszyka_z_kategori)
 
 # uruchom_test(dodaj_do_koszyka_z_kategori)
-service = Service()
-driver = webdriver.Chrome(service=service, options=chrome_options)
-dodaj_do_koszyka_z_kategori(driver)
-phrase = "nab"
-dodanie_produktow_przez_wyszukiwarke(driver, phrase)
-usun_produkty(driver)
+testy()
 input()
