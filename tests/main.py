@@ -49,4 +49,5 @@ driver = webdriver.Chrome(service=service, options=chrome_options)
 dodaj_do_koszyka_z_kategori(driver)
 phrase = "nab"
 dodanie_produktow_przez_wyszukiwarke(driver, phrase)
+usun_produkty(driver)
 input()
