@@ -11,34 +11,23 @@ from functions.usuniecieProduktow import usun_produkty
 from functions.wykonanieZamowienia import wykoanie_zamowienia, dodaj_do_koszyka_produkty
 
 
-def uruchom_test(funkcja_testowa, *args):
+def testy():
     service = Service()
     driver = webdriver.Chrome(service=service, options=chrome_options)
-    funkcja_testowa(driver, *args)
-    driver.quit()
 
+    dodaj_do_koszyka_z_kategori(driver)
 
-# --- WYKONANIE TESTÓW ---
+    phrase = "nab"
+    dodanie_produktow_przez_wyszukiwarke(driver, phrase)
 
-# 1. Rejestracja
-uruchom_test(testowanie_rejestracji)
+    usun_produkty(driver)
 
-# 2. Dodawanie przez wyszukiwarkę
-phrase = "nab"
-uruchom_test(dodanie_produktow_przez_wyszukiwarke, phrase)
+    testowanie_rejestracji(driver)
 
-# 3. Usuwanie produktów
-uruchom_test(usun_produkty)
+    wykoanie_zamowienia(driver)
 
-# 4. Wykonanie zamówienia
-uruchom_test(wykoanie_zamowienia)
+    status_zamowienia(driver)
 
-# 5. Status zamówienia
-uruchom_test(status_zamowienia)
+    pobierz_fakture(driver)
 
-# 6. Pobranie faktury
-uruchom_test(pobierz_fakture)
-
-# 7. Dodanie z kategorii
-uruchom_test(dodaj_do_koszyka_z_kategori)
-
+testy()
