@@ -5,6 +5,13 @@ def status_zamowienia(driver):
     wait = WebDriverWait(driver, 10)
     driver.get("https://localhost:8443/historia-zamowien")
 
+    szczegoly_link = wait.until(
+        EC.visibility_of_element_located(
+            (By.CSS_SELECTOR, "a[data-link-action='view-order-details']")
+        )
+    )
+    szczegoly_link.click()
+
     # mail = wait.until(
     #     EC.visibility_of_element_located((By.CSS_SELECTOR, "input#field-email"))
     # )

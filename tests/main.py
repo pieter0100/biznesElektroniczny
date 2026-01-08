@@ -11,13 +11,6 @@ from functions.usuniecieProduktow import usun_produkty
 from functions.wykonanieZamowienia import wykoanie_zamowienia, dodaj_do_koszyka_produkty
 
 
-def uruchom_test(funkcja_testowa, *args):
-    service = Service()
-    driver = webdriver.Chrome(service=service, options=chrome_options)
-    funkcja_testowa(driver, *args)
-    input()
-    driver.quit()
-
 def testy():
     service = Service()
     driver = webdriver.Chrome(service=service, options=chrome_options)
@@ -35,11 +28,7 @@ def testy():
 
     status_zamowienia(driver)
 
-# # 5. Status zamówienia
-# uruchom_test(status_zamowienia)
-#
-# # 6. Pobranie faktury
-# uruchom_test(pobierz_fakture)
+    pobierz_fakture(driver)
 
 testy()
 input()
