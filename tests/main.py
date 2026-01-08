@@ -43,4 +43,10 @@ def uruchom_test(funkcja_testowa, *args):
 # # 7. Dodanie z kategorii
 # uruchom_test(dodaj_do_koszyka_z_kategori)
 
-uruchom_test(dodaj_do_koszyka_z_kategori)
+# uruchom_test(dodaj_do_koszyka_z_kategori)
+service = Service()
+driver = webdriver.Chrome(service=service, options=chrome_options)
+dodaj_do_koszyka_z_kategori(driver)
+phrase = "nab"
+dodanie_produktow_przez_wyszukiwarke(driver, phrase)
+input()
