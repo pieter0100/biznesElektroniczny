@@ -39,7 +39,7 @@ def dodaj_z_kategori(driver):
     ilosc_produktow = 0
 
     for link in urls:
-        if ilosc_produktow == 5:
+        if ilosc_produktow == 6:
             break
 
         driver.get(link)
