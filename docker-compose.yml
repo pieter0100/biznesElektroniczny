@@ -10,6 +10,7 @@ services:
       - prestashop_network
     volumes:
       - ./prestashop/dbdata:/var/lib/mysql
+  
   maildev: # mailservice falszywy smtp zeby moc odebirac mail typu rejstracaj albo zakup
     image: maildev/maildev
     container_name: maildev
@@ -19,12 +20,14 @@ services:
     networks:
       - prestashop_network
     restart: unless-stopped
+  
   prestashop:
     container_name: prestashop
-    image: prestashop/prestashop:1.7.8.11
+    build: .
     restart: unless-stopped
     depends_on:
       - mysql
+      - memcached
     ports:
       - 8080:80
       - 8443:443 # port pod https
@@ -43,18 +46,25 @@ services:
       - ./prestashop/apache-config/000-default.conf:/etc/apache2/sites-available/000-default.conf
       - ./prestashop/apache-config/ssl:/etc/ssl/certs
 
-  phpmyadmin:
-    image: phpmyadmin
+  memcached:
+    image: memcached:alpine
+    container_name: shop_memcached
     restart: always
-    ports:
-      - 8081:80
-    environment:
-      - PMA_ARBITRARY=1
     networks:
       - prestashop_network
+  
+  # phpmyadmin:
+  #   image: phpmyadmin
+  #   restart: always
+  #   ports:
+  #     - 8081:80
+  #   environment:
+  #     - PMA_ARBITRARY=1
+  #   networks:
+  #     - prestashop_network
       
 networks:
   prestashop_network:
-volumes:
-  psdata:
-  dbdata:
+# volumes:
+#   psdata:
+#   dbdata:
