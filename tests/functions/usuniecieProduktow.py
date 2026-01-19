@@ -7,7 +7,7 @@ from selenium.common.exceptions import TimeoutException, StaleElementReferenceEx
 
 def usun_produkty(driver):
     wait = WebDriverWait(driver, 10)
-    driver.get("https://localhost:8443/")
+    driver.get(ROOT_URL)
     #
     # slider_section = wait.until(
     #     EC.visibility_of_element_located(
@@ -38,7 +38,8 @@ def usun_produkty(driver):
     #
     #     wait.until(EC.invisibility_of_element_located((By.ID, "blockcart-modal")))
 
-    driver.get("https://localhost:8443/koszyk?action=show")
+    url = ROOT_URL + "/koszyk?action=show"
+    driver.get(url)
 
     wait.until(EC.presence_of_element_located((By.ID, "main")))
 

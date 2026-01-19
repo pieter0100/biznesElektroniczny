@@ -81,7 +81,7 @@ def dodaj_z_kategori(driver):
 
 def dodaj_do_koszyka_z_kategori(driver):
     wait = WebDriverWait(driver, 10)
-    driver.get("https://localhost:8443")
+    driver.get(ROOT_URL)
 
     # Czekanie na pojawienie się kontenera Elementora
     lista_kategorii = wait.until(
@@ -116,5 +116,6 @@ def dodaj_do_koszyka_z_kategori(driver):
 
     # pokaz koszyk
     sleep(1)
-    driver.get("https://localhost:8443/koszyk?action=show")
+    url = ROOT_URL + "/koszyk?action=show"
+    driver.get(url)
     sleep(2)
