@@ -31,5 +31,5 @@ def testy():
     pobierz_fakture(driver)
 
 
-ROOT_URL = input("Podaj adres url sklepu:\n")
+# ROOT_URL = input("Podaj adres url sklepu:\n")
 testy()
