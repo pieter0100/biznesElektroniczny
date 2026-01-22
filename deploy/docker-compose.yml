@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  shop:
+    image: lidiaza/be_197652:test
+    hostname: prestashop-BE-197652
+    ports:
+      - target: 443
+        published: 19765
+    networks:
+      - shop_net
+    environment:
+      - DB_SERVER=10.40.71.115
+      - DB_USER=root
+      - DB_PASSWD=student
+      - DB_NAME=BE_197652
+      - DB_PREFIX=ps_
+      - PS_INSTALL_AUTO=0
+      - PS_DEV_MODE=0
+      - PS_ENABLE_SSL=1
+      - PS_CACHE_ENABLE=1
+      - PS_CACHING_SYSTEM=CacheMemcached
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      placement:
+        constraints:
+          - node.hostname == student-swarm01
+
+  memcached:
+    image: memcached:alpine
+    networks:
+      - shop_net
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.hostname == student-swarm01
+
+  maildev:
+    image: maildev/maildev
+    networks:
+      - shop_net
+    ports:
+      - target: 1080
+        published: 19766
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.hostname == student-swarm01
+
+networks:
+  shop_net:
+    driver: overlay
