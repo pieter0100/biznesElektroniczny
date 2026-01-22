@@ -3,7 +3,7 @@
 echo "Starting prestashop"
 
 # start docker images
-docker compose up -d
+docker compose up -d --build
 
 # wait for containers to load
 sleep 5s

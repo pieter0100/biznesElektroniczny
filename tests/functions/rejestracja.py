@@ -9,7 +9,8 @@ def testowanie_rejestracji(driver: webdriver):
     wait = WebDriverWait(driver, 10)
     fake = Faker("pl_PL")
 
-    driver.get("https://localhost:8443/logowanie?create_account=1")
+    url = ROOT_URL + "/logowanie?create_account=1"
+    driver.get(url)
 
     # Czekamy, aż radio button będzie klikalny
     WebDriverWait(driver, 10).until(

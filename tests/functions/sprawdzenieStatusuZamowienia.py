@@ -3,7 +3,9 @@ from common import *
 
 def status_zamowienia(driver):
     wait = WebDriverWait(driver, 10)
-    driver.get("https://localhost:8443/historia-zamowien")
+
+    url = ROOT_URL + "/historia-zamowien"
+    driver.get(url)
 
     szczegoly_link = wait.until(
         EC.visibility_of_element_located(

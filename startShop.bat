@@ -2,7 +2,7 @@
 echo Starting prestashop
 
 :: Start docker images (w tle)
-docker-compose up -d
+docker compose up -d --build
 
 :: Wait for containers to load (używamy komendy ping do symulacji sleep)
 :: Pingujemy localhost 6 razy, czekając ok. 1 sekundę między pingami.

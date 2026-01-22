@@ -6,7 +6,7 @@ from selenium.webdriver.common.by import By
 
 def dodanie_produktow_przez_wyszukiwarke(driver: webdriver, search_phrase: str):
     wait = WebDriverWait(driver, 10)
-    driver.get("https://localhost:8443/")
+    driver.get(ROOT_URL)
 
     search_bar = wait.until(
         EC.visibility_of_element_located((By.CLASS_NAME, "pos-search__input"))
