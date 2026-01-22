@@ -1,0 +1,57 @@
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+buildImage.sh
+closeShop.sh
+closeShop.bat
+startShop.sh
+startShop.bat
+
+# Dane bazy danych (lokalne)
+prestashop/dbdata
+prestashop/dbdataDump
+
+# Cache i pliki tymczasowe
+prestashop/var/cache/*
+prestashop/var/logs/*
+prestashop/cache/smarty/compile/*
+prestashop/cache/smarty/cache/*
+
+# Scraper i importy (narzędzia deweloperskie)
+scraper/
+data_import_rest_api/
+tests/
+winohobby_data/
+
+# Eksporty i backupy
+export/
+
+# Dokumentacja
+README.md
+TODO.md
+*.md
+
+# IDE i edytory
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+venv/
+
+# Logi
+*.log
+
+# Pliki systemowe
+.DS_Store
+Thumbs.dbS

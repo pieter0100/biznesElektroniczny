@@ -1,0 +1,7 @@
+var/cache
+.git
+.gitignore
+.vscode
+dbdata/
+mysql/
+mariadb/
